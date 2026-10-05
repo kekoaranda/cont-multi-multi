@@ -1,0 +1,60 @@
+<%- include('_cabecera', { titulo: 'Estudios contables' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'plataforma-estudios' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <h1>Estudios contables</h1>
+    <p class="sub">Cada estudio tiene sus propios usuarios y empresas clientes y no ve nada de los demás.
+        Desde acá se crean los estudios con su primer administrador; ese administrador carga después sus empresas y usuarios.
+        Esta pantalla no da acceso a la contabilidad de los estudios.</p>
+
+    <form action="/plataforma/estudios" method="post" class="panel">
+        <%- include('_csrf') %>
+        <h3>Nuevo estudio</h3>
+        <div class="grilla">
+            <div class="ancho"><label for="nombre">Nombre del estudio</label><input id="nombre" name="nombre" value="<%= form.nombre %>" maxlength="200" required></div>
+            <div><label for="ruc">RUC (opcional)</label><input id="ruc" name="ruc" value="<%= form.ruc %>" placeholder="80012345-6" autocomplete="off"></div>
+        </div>
+        <h3>Su administrador</h3>
+        <div class="grilla">
+            <div class="ancho"><label for="adminNombre">Nombre completo</label><input id="adminNombre" name="adminNombre" value="<%= form.adminNombre %>" required></div>
+            <div><label for="adminUsuario">Usuario para entrar</label><input id="adminUsuario" name="adminUsuario" value="<%= form.adminUsuario %>"
+                pattern="[a-z0-9._\-]{3,30}" autocapitalize="none" spellcheck="false" required autocomplete="off"></div>
+            <div class="ancho"><label for="adminEmail">Email</label><input id="adminEmail" name="adminEmail" type="email" value="<%= form.adminEmail %>" required autocomplete="off"></div>
+            <div><label for="adminClave">Clave inicial</label><input id="adminClave" name="adminClave" type="password" minlength="10" required autocomplete="new-password"></div>
+            <div><button type="submit" class="pri">Crear estudio</button></div>
+        </div>
+        <p class="ayuda">Los nombres de usuario y los emails son únicos en toda la plataforma, no solo dentro del estudio.</p>
+    </form>
+
+    <div class="tabla-scroll">
+        <table class="libro">
+            <thead><tr><th>Estudio</th><th>RUC</th><th>Administradores</th><th>Empresas activas</th><th>Usuarios activos</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+            <% estudios.forEach((s) => { %>
+            <tr>
+                <td><%= s.nombre %><%= String(s.id) === String(ctx.usuario.estudio.id) ? ' (el tuyo)' : '' %></td>
+                <td class="codigo"><%= s.ruc ?? '' %></td>
+                <td class="codigo"><%= s.administradores ?? '' %></td>
+                <td class="num"><%= s.empresas %></td>
+                <td class="num"><%= s.usuarios %></td>
+                <td><%= s.activo ? 'Activo' : 'Desactivado' %></td>
+                <td class="acciones">
+                    <% if (String(s.id) !== String(ctx.usuario.estudio.id)) { %>
+                    <form action="/plataforma/estudios/<%= s.id %>/activo" method="post">
+                        <%- include('_csrf') %>
+                        <input type="hidden" name="valor" value="<%= !s.activo %>">
+                        <button type="submit" class="link<%= s.activo ? ' peligro' : '' %>"><%= s.activo ? 'Desactivar' : 'Reactivar' %></button>
+                    </form>
+                    <% } %>
+                </td>
+            </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<%- include('_cabecera', { titulo: 'Datos del estudio' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'admin-estudio' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <h1>Datos del estudio</h1>
+    <p class="sub">El nombre aparece en la barra lateral de todos los usuarios del estudio.</p>
+
+    <form action="/admin/estudio" method="post" class="panel">
+        <%- include('_csrf') %>
+        <div class="grilla">
+            <div class="ancho"><label for="nombre">Nombre del estudio</label><input id="nombre" name="nombre" value="<%= form.nombre %>" maxlength="200" required></div>
+            <div><label for="ruc">RUC (opcional)</label><input id="ruc" name="ruc" value="<%= form.ruc %>" placeholder="80012345-6" autocomplete="off"></div>
+        </div>
+        <div class="fila-botones">
+            <button type="submit" class="pri">Guardar cambios</button>
+        </div>
+    </form>
+</main>
+</div>
+</body>
+</html>

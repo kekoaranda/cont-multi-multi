@@ -23,6 +23,7 @@ const CFG = {
   superusuario: process.env.PG_SUPERUSUARIO || 'postgres',
   superclave: process.env.PG_SUPERCLAVE || '',
   base: process.env.PG_BASE || 'contable',
+  estudioNombre: process.env.ESTUDIO_NOMBRE || '',
   adminUsuario: (process.env.ADMIN_USUARIO || 'nelson').toLowerCase(),
   adminNombre: process.env.ADMIN_NOMBRE || 'Nelson',
   adminEmail: process.env.ADMIN_EMAIL || 'nelson@estudio.local',
@@ -192,11 +193,19 @@ async function crearAdmin(env) {
     if (rows.length) {
       ok(`El usuario "${CFG.adminUsuario}" ya existe: no se modificó su clave`);
     } else {
+      // Va al único estudio de la instalación. El primer administrador también administra la plataforma
+      // (solo tiene efecto si después se activa MULTI_ESTUDIO para atender a varios estudios).
       await c.query(
-        'INSERT INTO usuarios (usuario, email, nombre, hash_clave, es_admin) VALUES ($1, $2, $3, $4, true)',
+        `INSERT INTO usuarios (usuario, email, nombre, hash_clave, es_admin, es_superadmin)
+         VALUES ($1, $2, $3, $4, true, NOT EXISTS (SELECT 1 FROM usuarios WHERE es_superadmin))`,
         [CFG.adminUsuario, CFG.adminEmail, CFG.adminNombre, await bcrypt.hash(CFG.adminClave, 12)],
       );
       ok(`Usuario administrador "${CFG.adminUsuario}" creado`);
+    }
+
+    if (CFG.estudioNombre.trim()) {
+      await c.query('UPDATE estudios SET nombre = $1 WHERE id = (SELECT min(id) FROM estudios)', [CFG.estudioNombre.trim()]);
+      ok(`Nombre del estudio: ${CFG.estudioNombre.trim()}`);
     }
 
     const ejemplo = CFG.crearEjemplo
@@ -207,7 +216,7 @@ async function crearAdmin(env) {
       const { rows: e } = await c.query(
         `INSERT INTO empresas (ruc, dv, razon_social, regimen, contador_resp)
          VALUES ('80045123', 6, 'Empresa de ejemplo S.A.', 'IRE_GENERAL', (SELECT id FROM usuarios WHERE usuario = $1))
-         ON CONFLICT (ruc) DO NOTHING RETURNING id`,
+         ON CONFLICT DO NOTHING RETURNING id`,
         [CFG.adminUsuario],
       );
       if (!e.length) {

@@ -27,6 +27,16 @@ npm run configurar
 npm start
 ```
 
+### Local o en la nube
+
+El mismo código sirve para los dos casos:
+
+- **Instalación local** (en un estudio): todo funciona como siempre, con un único estudio. Es lo que hacen los
+  instaladores de `instalacion/`.
+- **En la nube, para varios estudios contables**: con `MULTI_ESTUDIO=true` una sola instalación atiende a varios
+  estudios, cada uno con sus usuarios y sus empresas, sin ver nada de los demás. Cómo levantarla está en
+  [`nube/README.md`](nube/README.md).
+
 El detalle de cada paso, la configuración, las copias de seguridad y la solución de problemas están en el
 **manual técnico**; el uso diario, en el **manual del usuario**.
 
@@ -45,7 +55,8 @@ El detalle de cada paso, la configuración, las copias de seguridad y la soluci�
 
 1. En **Estudio → Empresas clientes**, dar de alta una empresa. Se copia el plan de cuentas base y se abre el
    ejercicio del año con sus 12 meses.
-2. En **Estudio → Usuarios**, crear a los contadores y auxiliares.
+2. En **Estudio → Usuarios**, crear a los contadores y auxiliares. En **Estudio → Datos del estudio** se pone el nombre
+   del estudio, que aparece en la barra lateral.
 3. En **Accesos** de cada empresa, asignar quién trabaja en ella y con qué rol.
 4. Cargar asientos en el **Libro diario** y consultar los **Reportes**.
 5. En **Comprobantes → Importar XML de SIFEN**, subir los XML de facturación electrónica (sueltos o en un ZIP)
@@ -95,7 +106,8 @@ Las cuentas que usa la importación son las del plan base (4.1.01 Ventas gravada
 | Contador | Además, confirmar y anular asientos, agregar cuentas, crear ejercicios y cerrar meses |
 | Supervisor | Además, reabrir meses y ver quién tiene acceso a la empresa |
 
-Los **administradores del estudio** ven todas las empresas, crean empresas y usuarios, y asignan accesos.
+Los **administradores del estudio** ven todas las empresas de su estudio, crean empresas y usuarios, y asignan accesos.
+Con `MULTI_ESTUDIO=true`, el **administrador de la plataforma** además da de alta los estudios (sin ver su contabilidad).
 
 ## Cómo está organizado
 
@@ -110,7 +122,8 @@ contable/
     plan.js       Plan de cuentas
     periodos.js   Ejercicios y cierre mensual
     reportes.js   Reportes contables
-    admin.js      Empresas, usuarios y accesos
+    admin.js      Datos del estudio, empresas, usuarios y accesos
+    estudios.js   Alta de estudios (solo con MULTI_ESTUDIO=true)
     comprobantes.js  Libros de compras y ventas, e importación de XML
     sifen.js      Lectura de los XML de SIFEN y armado del asiento (sin dependencias de la web)
     carga.js      Carga rápida de facturas en papel
@@ -121,6 +134,8 @@ contable/
   migraciones/  Esquema de la base de datos, en orden
   instalacion/  Instaladores, configurador, copia de seguridad e iniciar.bat
   manuales/     Manual del usuario en PDF y en Word
+  nube/         Docker Compose, HTTPS y guía para servir varios estudios en la nube
+  Dockerfile    Imagen del sistema para la nube
   test/         Pruebas
 ```
 
@@ -136,6 +151,11 @@ triggers. Ni un error de programación ni una consulta manual pueden romper la c
 **El aislamiento entre empresas lo hace la base.** Cada operación abre una transacción y fija
 `app.usuario_id`; la seguridad por fila (RLS) solo deja ver las empresas asignadas a ese usuario. Por eso la
 aplicación se conecta con el rol `contable_app`, que no es dueño de las tablas.
+
+**Los estudios son una capa más de esa misma separación.** Usuarios y empresas pertenecen a un estudio
+(migración `008_estudios.sql`). La política de `empresas` solo muestra las del estudio del usuario, y las tablas
+contables muestran una fila solo si se ve su empresa, así que el estudio se controla en un único lugar. Una
+instalación local es simplemente una con un solo estudio.
 
 **El dinero nunca pasa por números de coma flotante.** Los importes viajan como texto y se suman en centavos
 con `BigInt`. Se escriben como en las facturas paraguayas: `1.500.000` o `1.250,50`.

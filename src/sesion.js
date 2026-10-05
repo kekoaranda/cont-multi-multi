@@ -5,6 +5,9 @@ import { Router } from 'express';
 import { alcanza, pool, tx } from './db.js';
 import { HttpError, esId, traducirError } from './util.js';
 
+/** Varios estudios en la misma instalación (nube). En una instalación local queda en false. */
+export const MULTI_ESTUDIO = process.env.MULTI_ESTUDIO === 'true';
+
 // ----- CSRF: cada formulario lleva un token que tiene que coincidir con el de la sesión -----
 export function csrf(req, res, next) {
   if (!req.session.csrf) req.session.csrf = crypto.randomBytes(24).toString('hex');
@@ -54,19 +57,26 @@ export async function accion(req, res, destino, exito, fn, datosFormulario) {
 
 // ----- Usuario actual -----
 
-/** Exige sesión iniciada y relee el usuario: si lo desactivan, pierde el acceso al instante. */
+/** Exige sesión iniciada y relee el usuario: si lo desactivan (a él o a su estudio), pierde el acceso al instante. */
 export async function requiereSesion(req, res, next) {
   if (!req.session.usuarioId) return res.redirect('/login');
-  const { rows } = await pool.query(
-    'SELECT id, nombre, usuario, email, es_admin FROM usuarios WHERE id = $1 AND activo',
+  // La seguridad por fila de usuarios y estudios solo deja ver la propia fila con el usuario fijado.
+  const { rows } = await tx(req.session.usuarioId, (c) => c.query(
+    `SELECT u.id, u.nombre, u.usuario, u.email, u.es_admin, u.es_superadmin, s.id AS estudio_id, s.nombre AS estudio
+       FROM usuarios u JOIN estudios s ON s.id = u.estudio_id
+      WHERE u.id = $1 AND u.activo AND s.activo`,
     [req.session.usuarioId],
-  );
+  ));
   if (!rows[0]) {
     req.session.destroy(() => res.redirect('/login?desactivado'));
     return;
   }
   const u = rows[0];
-  req.usuario = { id: u.id, nombre: u.nombre, usuario: u.usuario, email: u.email, esAdmin: u.es_admin };
+  req.usuario = {
+    id: u.id, nombre: u.nombre, usuario: u.usuario, email: u.email, esAdmin: u.es_admin,
+    esSuperadmin: MULTI_ESTUDIO && u.es_superadmin,
+    estudio: { id: u.estudio_id, nombre: u.estudio },
+  };
   next();
 }
 
@@ -135,10 +145,8 @@ rutasSesion.post('/login', async (req, res) => {
   // Se puede entrar con el nombre de usuario o con el email.
   const usuario = String(req.body.usuario ?? '').trim().toLowerCase();
   const clave = String(req.body.clave ?? '');
-  const { rows } = await pool.query(
-    'SELECT id, hash_clave, activo FROM usuarios WHERE usuario = $1 OR email = $1',
-    [usuario],
-  );
+  // Sin usuario conectado la tabla no se ve: la búsqueda la hace una función de la base.
+  const { rows } = await pool.query('SELECT id, hash_clave, activo FROM fn_buscar_login($1)', [usuario]);
   const u = rows[0];
   const ok = await bcrypt.compare(clave, u ? u.hash_clave : HASH_FALSO);
   if (!u || !u.activo || !ok) {

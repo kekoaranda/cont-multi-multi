@@ -4,7 +4,7 @@
     `<a href="${ruta}"${seccion === clave ? ' class="activo" aria-current="page"' : ''}>${texto}</a>`;
 %>
 <aside class="lateral">
-    <div class="marca">Partida<small>Sistema contable multiempresa</small></div>
+    <div class="marca">Partida<small><%= ctx.usuario.estudio?.nombre ?? 'Sistema contable multiempresa' %></small></div>
 
     <% if (ctx.empresas.length) { %>
     <form action="/cambiar-empresa" method="get" class="selector">
@@ -37,6 +37,14 @@
         <span class="titulo-nav">Estudio</span>
         <%- enlace('admin-empresas', '/admin/empresas', 'Empresas clientes') %>
         <%- enlace('admin-usuarios', '/admin/usuarios', 'Usuarios') %>
+        <%- enlace('admin-estudio', '/admin/estudio', 'Datos del estudio') %>
+    </nav>
+    <% } %>
+
+    <% if (ctx.usuario.esSuperadmin) { %>
+    <nav aria-label="Administración de la plataforma" class="admin">
+        <span class="titulo-nav">Plataforma</span>
+        <%- enlace('plataforma-estudios', '/plataforma/estudios', 'Estudios contables') %>
     </nav>
     <% } %>
 

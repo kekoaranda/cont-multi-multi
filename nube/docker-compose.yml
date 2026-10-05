@@ -1,0 +1,52 @@
+# Partida en un servidor propio (VPS) con varios estudios contables.
+# Uso, desde esta carpeta:
+#   cp env.example .env    (y completar las claves)
+#   docker compose up -d
+# Ver nube/README.md.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: contable
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en nube/.env}
+    volumes:
+      - datos:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d contable"]
+      interval: 5s
+      retries: 20
+
+  app:
+    build: ..
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL_ADMIN: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/contable
+      DATABASE_URL: postgres://contable_app:${DB_APP_PASSWORD}@db:5432/contable
+      MULTI_ESTUDIO: "true"
+      COOKIE_SEGURA: "true"
+      PORT: "3000"
+
+  # HTTPS automático (Let's Encrypt) para el dominio de DOMINIO.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO: ${DOMINIO:?Falta DOMINIO en nube/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+
+volumes:
+  datos:
+  caddy:

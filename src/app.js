@@ -6,7 +6,7 @@ import express from 'express';
 import session from 'express-session';
 import { pool } from './db.js';
 import { capitalizar, fecha, gs, gsSinCero, mes, sumaIva, traducirError } from './util.js';
-import { contextoEmpresa, csrf, empresasDe, mensajes, requiereSesion, rutasSesion } from './sesion.js';
+import { MULTI_ESTUDIO, contextoEmpresa, csrf, empresasDe, mensajes, requiereSesion, rutasSesion } from './sesion.js';
 import rutasDiario from './diario.js';
 import rutasPlan from './plan.js';
 import rutasPeriodos from './periodos.js';
@@ -15,6 +15,7 @@ import rutasComprobantes from './comprobantes.js';
 import rutasCarga from './carga.js';
 import rutasPlantillas from './plantillas.js';
 import { rutasAdmin, rutasAccesos } from './admin.js';
+import rutasPlataforma from './estudios.js';
 
 if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
   console.error('Falta SESSION_SECRET en el .env (al menos 32 caracteres). Mirá .env.example.');
@@ -62,6 +63,7 @@ app.get('/', requiereSesion, async (req, res) => {
   const destino = ultima ?? empresas[0];
   if (destino) return res.redirect(`/empresas/${destino.id}/diario`);
   if (req.usuario.esAdmin) return res.redirect('/admin/empresas');
+  if (req.usuario.esSuperadmin) return res.redirect('/plataforma/estudios');
   res.render('sin-empresas', { ctx: { usuario: req.usuario, empresa: null, empresas: [], puede: () => false } });
 });
 
@@ -71,6 +73,8 @@ app.get('/cambiar-empresa', requiereSesion, (req, res) => {
 });
 
 app.use('/admin', requiereSesion, rutasAdmin);
+// Alta de estudios: solo existe cuando la instalación atiende a varios estudios (MULTI_ESTUDIO=true)
+if (MULTI_ESTUDIO) app.use('/plataforma', requiereSesion, rutasPlataforma);
 app.use('/empresas/:empresaId', requiereSesion, contextoEmpresa);
 app.use('/empresas/:empresaId/diario', rutasDiario);
 app.use('/empresas/:empresaId/plan', rutasPlan);
@@ -99,19 +103,20 @@ app.use((err, req, res, next) => {
 
 // Primer administrador: solo si la tabla de usuarios está vacía
 async function crearAdminInicial() {
-  const { rows } = await pool.query('SELECT count(*)::int AS n FROM usuarios');
-  if (rows[0].n > 0) return;
-  const { ADMIN_EMAIL: email, ADMIN_CLAVE: clave, ADMIN_NOMBRE: nombre = 'Administrador' } = process.env;
+  const { rows } = await pool.query('SELECT fn_hay_usuarios() AS hay');
+  if (rows[0].hay) return;
+  const { ADMIN_EMAIL: email, ADMIN_CLAVE: clave, ADMIN_NOMBRE: nombre = 'Administrador', ESTUDIO_NOMBRE: estudio = '' } = process.env;
   const usuario = String(process.env.ADMIN_USUARIO || 'admin').trim().toLowerCase();
   if (!email || !clave || clave.length < 10) {
     console.warn('No hay usuarios. Completá ADMIN_USUARIO, ADMIN_EMAIL y ADMIN_CLAVE (mínimo 10 caracteres) en el .env y reiniciá.');
     return;
   }
-  await pool.query(
-    'INSERT INTO usuarios (usuario, email, nombre, hash_clave, es_admin) VALUES ($1, $2, $3, $4, true)',
-    [usuario, email, nombre, await bcrypt.hash(clave, 12)],
+  // La base vuelve a controlar que no haya usuarios, por si arrancan dos servidores a la vez.
+  const { rows: r } = await pool.query(
+    'SELECT fn_crear_admin_inicial($1, $2, $3, $4, $5) AS creado',
+    [usuario, email, nombre, await bcrypt.hash(clave, 12), estudio],
   );
-  console.log(`Administrador inicial creado: usuario "${usuario}". Ya podés borrar ADMIN_CLAVE del .env.`);
+  if (r[0].creado) console.log(`Administrador inicial creado: usuario "${usuario}". Ya podés borrar ADMIN_CLAVE del .env.`);
 }
 
 try {
@@ -125,7 +130,7 @@ try {
 const puerto = Number(process.env.PORT || 3000);
 const servidor = app.listen(puerto, (err) => {
   if (err) return; // lo informa el manejador de 'error' de abajo
-  console.log(`Sistema contable funcionando en http://localhost:${puerto}`);
+  console.log(`Sistema contable funcionando en http://localhost:${puerto}${MULTI_ESTUDIO ? ' (varios estudios)' : ''}`);
 });
 servidor.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {

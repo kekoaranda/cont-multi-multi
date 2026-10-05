@@ -1,0 +1,11 @@
+node_modules
+.env
+.env.*
+!.env.example
+respaldos
+manuales
+instalacion
+test
+.git
+**/.env
+nube

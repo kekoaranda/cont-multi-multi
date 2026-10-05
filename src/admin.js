@@ -1,4 +1,4 @@
-// Administración del estudio: empresas clientes, usuarios y accesos por empresa.
+// Administración del estudio: datos del estudio, empresas clientes, usuarios y accesos por empresa.
 import bcrypt from 'bcryptjs';
 import { Router } from 'express';
 import { ROLES, enEmpresa, exigirAdmin, tx } from './db.js';
@@ -7,6 +7,18 @@ import { accion, contextoGeneral } from './sesion.js';
 import { HttpError, dvRuc, esId } from './util.js';
 
 export const REGIMENES = ['IRE_GENERAL', 'IRE_SIMPLE', 'IRE_RESIMPLE', 'IRP', 'OTRO'];
+
+// ----- Datos del estudio -----
+
+/** Valida nombre y RUC (opcional) de un estudio. También lo usa el alta de estudios. */
+export function validarEstudio(datos) {
+  const nombre = String(datos.nombre ?? '').trim();
+  if (!nombre) throw new HttpError(422, 'Ingresá el nombre del estudio.');
+  if (nombre.length > 200) throw new HttpError(422, 'El nombre admite hasta 200 caracteres.');
+  const ruc = String(datos.ruc ?? '').trim();
+  if (ruc && !/^\d{3,10}(-\d)?$/.test(ruc)) throw new HttpError(422, 'El RUC del estudio va con números y, si querés, el dígito verificador (80012345-6).');
+  return { nombre, ruc };
+}
 
 // ----- Empresas -----
 
@@ -52,6 +64,24 @@ rutasAdmin.use((req, res, next) => {
   next();
 });
 rutasAdmin.use(contextoGeneral);
+
+rutasAdmin.get('/estudio', async (req, res) => {
+  const { rows } = await tx(req.usuario.id, (c) => c.query(
+    'SELECT nombre, ruc FROM estudios WHERE id = $1', [req.usuario.estudio.id],
+  ));
+  const form = res.locals.form ?? { nombre: rows[0].nombre, ruc: rows[0].ruc ?? '' };
+  res.render('admin-estudio', { form });
+});
+
+rutasAdmin.post('/estudio', (req, res) => {
+  const datos = { nombre: String(req.body.nombre ?? ''), ruc: String(req.body.ruc ?? '') };
+  return accion(req, res, '/admin/estudio', 'Datos del estudio actualizados.', async () => {
+    const { nombre, ruc } = validarEstudio(datos);
+    await tx(req.usuario.id, (c) => c.query(
+      'UPDATE estudios SET nombre = $2, ruc = NULLIF($3, \'\') WHERE id = $1', [req.usuario.estudio.id, nombre, ruc],
+    ));
+  }, datos);
+});
 
 rutasAdmin.get('/empresas', async (req, res) => {
   const { rows } = await tx(req.usuario.id, (c) => c.query(
@@ -124,7 +154,7 @@ const datosUsuario = (body) => ({
   esAdmin: body.esAdmin ?? '',
 });
 
-function validarUsuario(datos) {
+export function validarUsuario(datos) {
   if (!/^[a-z0-9._-]{3,30}$/.test(datos.usuario)) {
     throw new HttpError(422, 'El nombre de usuario va en minúsculas, sin espacios ni acentos, entre 3 y 30 caracteres (por ejemplo "nelson" o "maria.lopez").');
   }
