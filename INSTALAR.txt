@@ -1,0 +1,27 @@
+PARTIDA - SISTEMA CONTABLE MULTIEMPRESA
+Instalación rápida
+======================================
+
+1. Descomprimí esta carpeta en un lugar fijo (no en Descargas ni en el Escritorio).
+   Ejemplos:  C:\Partida   o   /home/tu-usuario/partida
+
+2. Ejecutá el instalador de tu sistema:
+
+   WINDOWS 10 / 11
+     Abrí la carpeta "instalacion" y hacé doble clic en  instalar.bat
+     Aceptá el permiso de administrador cuando Windows lo pida.
+
+   LINUX (Ubuntu, Debian, Mint, Fedora, Rocky, AlmaLinux, Arch) y MACOS
+     Abrí una terminal en esta carpeta y ejecutá, sin sudo:
+       bash instalacion/instalar.sh
+
+3. Respondé las preguntas. Al terminar, abrí en el navegador:
+
+     http://localhost:3000
+     Usuario: nelson
+     Clave:   hola012026
+
+   Cambiá esa clave el primer día (Estudio > Usuarios > Editar).
+
+En la carpeta "manuales" está el manual del usuario, en PDF y en Word.
+El manual técnico explica cada paso, las copias de seguridad y qué hacer si algo falla.

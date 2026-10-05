@@ -1,0 +1,148 @@
+<%- include('_cabecera', { titulo: 'Reportes' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'reportes' }) %>
+<main>
+    <% const base = `/empresas/${ctx.empresa.id}/reportes`; %>
+    <h1>Reportes</h1>
+    <p class="sub"><%= ctx.empresa.razon_social %>, RUC <%= ctx.empresa.ruc %>-<%= ctx.empresa.dv %></p>
+
+    <nav class="pestanas" aria-label="Tipo de reporte">
+        <% Object.entries(tipos).forEach(([clave, nombre]) => { %>
+        <a href="<%= base %>?tipo=<%= clave %>&desde=<%= desde %>&hasta=<%= hasta %>"<%- clave === tipo ? ' class="activa" aria-current="page"' : '' %>><%= nombre %></a>
+        <% }) %>
+    </nav>
+
+    <form method="get" class="filtros">
+        <input type="hidden" name="tipo" value="<%= tipo %>">
+        <% if (tipo === 'balance') { %>
+        <input type="hidden" name="desde" value="<%= desde %>">
+        <% } else { %>
+        <div><label for="desde">Desde</label><input id="desde" type="date" name="desde" value="<%= desde %>"></div>
+        <% } %>
+        <div><label for="hasta"><%= tipo === 'balance' ? 'Al' : 'Hasta' %></label><input id="hasta" type="date" name="hasta" value="<%= hasta %>"></div>
+        <% if (tipo === 'mayor') { %>
+        <div class="ancho">
+            <label for="cuenta">Cuenta</label>
+            <select id="cuenta" name="cuenta">
+                <% cuentas.forEach((c) => { %><option value="<%= c.codigo %>"<%= c.codigo === cuenta ? ' selected' : '' %>><%= c.codigo %>  <%= c.nombre %></option><% }) %>
+            </select>
+        </div>
+        <% } %>
+        <div><button type="submit" class="sec">Ver reporte</button></div>
+    </form>
+
+    <% if (sumas) { %>
+        <% if (!sumas.filas.length) { %>
+        <p class="vacio">Sin movimientos confirmados en el periodo.</p>
+        <% } else { %>
+        <div class="tabla-scroll">
+            <table class="libro">
+                <thead><tr><th>Código</th><th>Cuenta</th><th class="num">Debe</th><th class="num">Haber</th><th class="num">Saldo deudor</th><th class="num">Saldo acreedor</th></tr></thead>
+                <tbody>
+                <% sumas.filas.forEach((f) => { %>
+                <tr>
+                    <td class="codigo"><a href="<%= base %>?tipo=mayor&cuenta=<%= encodeURIComponent(f.codigo) %>&desde=<%= desde %>&hasta=<%= hasta %>"><%= f.codigo %></a></td>
+                    <td><%= f.nombre %></td>
+                    <td class="num"><%= gs(f.debe) %></td>
+                    <td class="num"><%= gs(f.haber) %></td>
+                    <td class="num"><%= gsSinCero(f.saldoDeudor) %></td>
+                    <td class="num"><%= gsSinCero(f.saldoAcreedor) %></td>
+                </tr>
+                <% }) %>
+                <tr class="total">
+                    <td colspan="2">Totales</td>
+                    <td class="num"><%= gs(sumas.debe) %></td>
+                    <td class="num"><%= gs(sumas.haber) %></td>
+                    <td class="num"><%= gs(sumas.saldoDeudor) %></td>
+                    <td class="num"><%= gs(sumas.saldoAcreedor) %></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="control <%= sumas.cuadra ? 'ok' : 'mal' %>"><%= sumas.cuadra ? 'Las sumas y los saldos cuadran.' : 'Las sumas no cuadran: revisá los asientos.' %></p>
+        <% } %>
+    <% } %>
+
+    <% if (tipo === 'mayor' && !mayor) { %><p class="vacio">Esta empresa no tiene cuentas imputables activas.</p><% } %>
+    <% if (mayor) { %>
+        <h2><%= mayor.codigo %> <%= mayor.nombre %></h2>
+        <div class="tabla-scroll">
+            <table class="libro">
+                <thead><tr><th>Fecha</th><th>Asiento</th><th>Concepto</th><th class="num">Debe</th><th class="num">Haber</th><th class="num">Saldo</th></tr></thead>
+                <tbody>
+                <tr><td colspan="5" class="ayuda">Saldo anterior al <%= fecha(desde) %></td><td class="num"><%= gs(mayor.saldoAnterior) %></td></tr>
+                <% mayor.movimientos.forEach((m) => { %>
+                <tr>
+                    <td><%= fecha(m.fecha) %></td>
+                    <td><%= m.numero %></td>
+                    <td><%= m.concepto %></td>
+                    <td class="num"><%= gsSinCero(m.debe) %></td>
+                    <td class="num"><%= gsSinCero(m.haber) %></td>
+                    <td class="num<%= m.saldo.startsWith('-') ? ' negativo' : '' %>"><%= gs(m.saldo) %></td>
+                </tr>
+                <% }) %>
+                <tr class="total">
+                    <td colspan="3">Totales y saldo final</td>
+                    <td class="num"><%= gs(mayor.totalDebe) %></td>
+                    <td class="num"><%= gs(mayor.totalHaber) %></td>
+                    <td class="num"><%= gs(mayor.saldoFinal) %></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="ayuda">Saldo según la naturaleza de la cuenta (<%= mayor.deudora ? 'deudora' : 'acreedora' %>).</p>
+    <% } %>
+
+    <%
+      // Filas de una sección (ingresos, activo, etc.) para los reportes de resultados y balance
+      const filasSeccion = (s) => s.cuentas.map((c) =>
+        `<tr><td class="codigo">${c.codigo}</td><td>${escapar(c.nombre)}</td><td class="num">${gs(c.saldo)}</td></tr>`).join('');
+      function escapar(t) { return String(t).replace(/[&<>"']/g, (x) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x])); }
+    %>
+
+    <% if (resultados) { %>
+    <div class="tabla-scroll">
+        <table class="libro angosta">
+            <tbody>
+            <tr class="grupo"><td colspan="3">Ingresos</td></tr>
+            <%- filasSeccion(resultados.ingresos) %>
+            <tr><td></td><td><strong>Total ingresos</strong></td><td class="num"><strong><%= gs(resultados.ingresos.total) %></strong></td></tr>
+            <tr class="grupo"><td colspan="3">Costos y gastos</td></tr>
+            <%- filasSeccion(resultados.gastos) %>
+            <tr><td></td><td><strong>Total costos y gastos</strong></td><td class="num"><strong><%= gs(resultados.gastos.total) %></strong></td></tr>
+            <tr class="total">
+                <td></td>
+                <td><%= resultados.resultado.startsWith('-') ? 'Pérdida del periodo' : 'Utilidad del periodo' %></td>
+                <td class="num<%= resultados.resultado.startsWith('-') ? ' negativo' : '' %>"><%= gs(resultados.resultado) %></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <% } %>
+
+    <% if (balance) { %>
+    <div class="tabla-scroll">
+        <table class="libro angosta">
+            <tbody>
+            <tr class="grupo"><td colspan="3">Activo</td></tr>
+            <%- filasSeccion(balance.activo) %>
+            <tr class="total"><td></td><td>Total activo</td><td class="num"><%= gs(balance.activo.total) %></td></tr>
+            <tr class="grupo"><td colspan="3">Pasivo</td></tr>
+            <%- filasSeccion(balance.pasivo) %>
+            <tr><td></td><td><strong>Total pasivo</strong></td><td class="num"><strong><%= gs(balance.pasivo.total) %></strong></td></tr>
+            <tr class="grupo"><td colspan="3">Patrimonio neto</td></tr>
+            <%- filasSeccion(balance.patrimonio) %>
+            <tr><td></td><td>Resultado no asignado a la fecha</td><td class="num"><%= gs(balance.resultado) %></td></tr>
+            <tr><td></td><td><strong>Total patrimonio neto</strong></td><td class="num"><strong><%= gs(balance.totalPatrimonio) %></strong></td></tr>
+            <tr class="total"><td></td><td>Total pasivo y patrimonio neto</td><td class="num"><%= gs(balance.totalPasivoPatrimonio) %></td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p class="control <%= balance.cuadra ? 'ok' : 'mal' %>"><%= balance.cuadra ? 'Activo = Pasivo + Patrimonio neto.' : 'El balance no cuadra: revisá los asientos.' %></p>
+    <p class="ayuda">Mientras no se registre el asiento de cierre de ejercicio, el resultado se acumula desde el primer asiento.</p>
+    <% } %>
+</main>
+</div>
+</body>
+</html>

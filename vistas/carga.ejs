@@ -1,0 +1,118 @@
+<%- include('_cabecera', { titulo: libro === 'VENTA' ? 'Cargar venta' : 'Cargar compra' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'comprobantes' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <% const base = `/empresas/${ctx.empresa.id}/carga`; const venta = libro === 'VENTA'; %>
+    <div class="spread">
+        <div>
+            <h1><%= venta ? 'Cargar venta en papel' : 'Cargar compra en papel' %></h1>
+            <p class="sub">Escribí lo que dice la factura. La plantilla decide la cuenta del asiento y el IVA se calcula solo.</p>
+        </div>
+        <nav class="pestanas" aria-label="Libro">
+            <a href="<%= base %>?libro=COMPRA"<%- venta ? '' : ' class="activa" aria-current="page"' %>>Compras</a>
+            <a href="<%= base %>?libro=VENTA"<%- venta ? ' class="activa" aria-current="page"' : '' %>>Ventas</a>
+        </nav>
+    </div>
+
+    <% if (!plantillas.length) { %>
+    <div class="msg error" role="alert">No hay plantillas activas de <%= venta ? 'ventas' : 'compras' %>. Creá una en <a href="/empresas/<%= ctx.empresa.id %>/plantillas">Plantillas</a>.</div>
+    <% } %>
+
+    <form action="<%= base %>" method="post" class="panel carga" id="form-carga" data-libro="<%= libro %>">
+        <%- include('_csrf') %>
+        <input type="hidden" name="libro" value="<%= libro %>">
+        <div class="grilla">
+            <div><label for="fecha">Fecha</label><input id="fecha" name="fecha" type="date" value="<%= form.fecha %>" required></div>
+            <div>
+                <label for="tipo">Comprobante</label>
+                <select id="tipo" name="tipo">
+                    <option value="1"<%= form.tipo === '1' ? ' selected' : '' %>>Factura</option>
+                    <option value="5"<%= form.tipo === '5' ? ' selected' : '' %>>Nota de crédito</option>
+                </select>
+            </div>
+            <div>
+                <label for="condicion">Condición</label>
+                <select id="condicion" name="condicion">
+                    <option value="contado"<%= form.condicion === 'contado' ? ' selected' : '' %>>Contado</option>
+                    <option value="credito"<%= form.condicion === 'credito' ? ' selected' : '' %>>Crédito</option>
+                </select>
+            </div>
+            <div>
+                <label for="cuentaContado">Si es contado, contra</label>
+                <select id="cuentaContado" name="cuentaContado">
+                    <% cuentasContado.forEach((c) => { %><option value="<%= c.codigo %>"<%= c.codigo === form.cuentaContado ? ' selected' : '' %>><%= c.codigo %>  <%= c.nombre %></option><% }) %>
+                </select>
+            </div>
+        </div>
+
+        <div class="grilla" style="margin-top:14px">
+            <div><label for="ruc">RUC <%= venta ? 'del cliente' : 'del proveedor' %></label>
+                <input id="ruc" name="ruc" value="<%= form.ruc %>" placeholder="80012345-6" required autocomplete="off" autofocus></div>
+            <div class="ancho"><label for="razonSocial">Razón social</label>
+                <input id="razonSocial" name="razonSocial" value="<%= form.razonSocial %>" maxlength="200" autocomplete="off"
+                       placeholder="Se completa sola si ya está cargado"></div>
+            <div><label for="timbrado">Timbrado</label>
+                <input id="timbrado" name="timbrado" value="<%= form.timbrado %>" inputmode="numeric" maxlength="8" required autocomplete="off"></div>
+            <div><label for="numero">Número</label>
+                <input id="numero" name="numero" value="<%= form.numero %>" placeholder="001-001-0000123" required autocomplete="off"></div>
+            <div class="ancho">
+                <label for="plantilla">Plantilla</label>
+                <select id="plantilla" name="plantilla" required>
+                    <option value="">Elegí una plantilla</option>
+                    <% plantillas.forEach((p) => { %>
+                    <option value="<%= p.id %>" data-columna="<%= p.columna %>"<%= String(p.id) === String(form.plantilla) ? ' selected' : '' %>>
+                        <%= p.nombre %><%= p.cuenta ? ` (${p.cuenta} ${p.cuenta_nombre})` : '' %></option>
+                    <% }) %>
+                </select>
+            </div>
+        </div>
+
+        <h3 style="margin-top:18px">Importes de la factura</h3>
+        <div class="importes">
+            <div data-columna="10"><label for="grav10">Gravada 10% (con IVA)</label><input id="grav10" name="grav10" class="num importe" inputmode="decimal" value="<%= form.grav10 %>" autocomplete="off"></div>
+            <div><label for="iva10">IVA 10%</label><input id="iva10" name="iva10" class="num" inputmode="decimal" value="<%= form.iva10 %>" placeholder="Se calcula" autocomplete="off"></div>
+            <div data-columna="5"><label for="grav5">Gravada 5% (con IVA)</label><input id="grav5" name="grav5" class="num importe" inputmode="decimal" value="<%= form.grav5 %>" autocomplete="off"></div>
+            <div><label for="iva5">IVA 5%</label><input id="iva5" name="iva5" class="num" inputmode="decimal" value="<%= form.iva5 %>" placeholder="Se calcula" autocomplete="off"></div>
+            <div data-columna="exenta"><label for="exenta">Exenta</label><input id="exenta" name="exenta" class="num importe" inputmode="decimal" value="<%= form.exenta %>" autocomplete="off"></div>
+        </div>
+        <p class="ayuda">Dejá el IVA vacío para que se calcule (10%: monto ÷ 11; 5%: monto ÷ 21). Si la factura dice otro importe por redondeo, escribilo.</p>
+
+        <div class="totales">
+            <div><span>Total de la factura</span><strong class="total-carga" id="total-carga">0</strong></div>
+        </div>
+
+        <div class="fila-botones">
+            <button type="submit" class="pri">Guardar y cargar otra</button>
+            <% if (ctx.puede('contador')) { %>
+            <label class="check-en-linea"><input type="checkbox" name="confirmar"<%= form.confirmar === 'on' ? ' checked' : '' %>> Confirmar el asiento</label>
+            <% } %>
+            <a class="link" href="/empresas/<%= ctx.empresa.id %>/comprobantes">Ver comprobantes</a>
+        </div>
+    </form>
+
+    <% if (ultimos.length) { %>
+    <h2>Últimas <%= venta ? 'ventas' : 'compras' %> cargadas a mano</h2>
+    <div class="tabla-scroll">
+        <table class="libro">
+            <thead><tr><th>Fecha</th><th>Comprobante</th><th><%= venta ? 'Cliente' : 'Proveedor' %></th><th class="num">Total</th><th>Asiento</th></tr></thead>
+            <tbody>
+            <% ultimos.forEach((u) => { %>
+            <tr>
+                <td><%= fecha(u.fecha) %></td>
+                <td><%= u.tipo === 5 ? 'Nota de crédito' : 'Factura' %> <span class="codigo"><%= u.numero %></span></td>
+                <td><%= u.razon_social %></td>
+                <td class="num"><%= gs(u.total) %></td>
+                <td><% if (u.asiento) { %>N.º <%= u.asiento %> <span class="estado <%= u.estado %>"><%= capitalizar(u.estado) %></span><% } %></td>
+            </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <% } %>
+</main>
+</div>
+<script src="/carga.js"></script>
+</body>
+</html>

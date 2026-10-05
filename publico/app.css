@@ -1,0 +1,169 @@
+/* Partida: estilo de libro contable. Colores definidos una vez, con modo oscuro. */
+*{box-sizing:border-box}
+:root{
+  color-scheme:light only;
+  --papel:#F1F4EF; --superficie:#FFFFFF; --tinta:#15223A; --tenue:#55655E;
+  --regla:#D5DED7; --regla-2:#A7B9AD; --verde:#2C6A4C; --sobre-verde:#FFFFFF;
+  --verde-2:#E0EDE4; --rojo:#B3261E; --rojo-2:#F8E4E1;
+}
+/* Tema oscuro desactivado: el sistema se ve siempre claro.
+   Para que siga el tema de la computadora, borrá el comentario que envuelve este bloque. */
+/*
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --papel:#0E1512; --superficie:#151F1A; --tinta:#E3EAE5; --tenue:#9BABA3;
+    --regla:#26352E; --regla-2:#3D5247; --verde:#7CC8A0; --sobre-verde:#0E1512;
+    --verde-2:#1B3127; --rojo:#F2887D; --rojo-2:#3A1E1A;
+  }
+}
+*/
+body{margin:0; background:var(--papel); color:var(--tinta);
+  font:15px/1.5 "Libre Franklin", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-variant-numeric:tabular-nums}
+a{color:var(--verde)}
+.app{display:grid; grid-template-columns:260px minmax(0,1fr); min-height:100vh}
+
+/* Barra lateral */
+.lateral{background:var(--superficie); border-right:1px solid var(--regla); padding:22px 16px;
+  position:sticky; top:0; align-self:start; height:100vh; overflow:auto; display:flex; flex-direction:column}
+.marca{font-weight:800; font-size:21px; letter-spacing:-0.02em; padding:0 8px}
+.marca small{display:block; font-weight:500; font-size:12.5px; color:var(--tenue); letter-spacing:0}
+.selector{margin:22px 0 18px; padding:14px 10px 12px; border-top:2px solid var(--tinta); border-bottom:1px solid var(--regla)}
+.selector select{font-weight:700}
+.selector .ruc{font-size:13px; color:var(--tenue); margin-top:6px}
+.lateral nav a{display:block; padding:8px 12px; margin:1px 0; color:var(--tinta); text-decoration:none;
+  border-left:3px solid transparent; border-radius:0 6px 6px 0}
+.lateral nav a:hover{background:var(--papel)}
+.lateral nav a.activo{border-left-color:var(--verde); background:var(--verde-2); font-weight:600}
+.lateral nav.admin{margin-top:18px; padding-top:12px; border-top:1px solid var(--regla)}
+.titulo-nav{display:block; font-size:12.5px; color:var(--tenue); padding:0 12px 4px}
+.sesion{margin-top:auto; padding:16px 8px 0; font-size:13.5px; color:var(--tenue)}
+.sesion span{display:block}
+.sesion .link{padding:0}
+
+/* Contenido */
+main{padding:30px 38px 60px; max-width:1200px; width:100%}
+h1{font-size:27px; line-height:1.2; margin:0 0 4px; letter-spacing:-0.015em; font-weight:800}
+h2{font-size:18px; margin:26px 0 10px}
+h3{font-size:15.5px; margin:0 0 12px}
+.sub{color:var(--tenue); margin:0 0 18px; max-width:75ch}
+.ayuda{font-size:13px; color:var(--tenue)}
+.vacio{color:var(--tenue); padding:20px 0}
+.spread{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap}
+
+.msg{padding:10px 14px; border-radius:6px; margin:0 0 16px; border:1px solid}
+.msg.ok{background:var(--verde-2); border-color:var(--verde)}
+.msg.error{background:var(--rojo-2); border-color:var(--rojo)}
+.msg ul{margin:6px 0 0; padding-left:20px}
+
+.panel{background:var(--superficie); border:1px solid var(--regla); border-radius:8px; padding:18px 20px; margin:16px 0}
+.grilla{display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px 16px; align-items:end}
+.grilla .ancho{grid-column:span 2}
+.filtros{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:end; margin:0 0 16px}
+.filtros > div{min-width:150px}
+.filtros .ancho{min-width:260px; flex:1}
+label{display:block; font-size:13px; color:var(--tenue); margin-bottom:4px}
+.check{display:flex; flex-wrap:wrap; gap:4px 16px; align-items:end}
+.check label{display:inline-flex; align-items:center; gap:6px; color:var(--tinta); font-size:14px; padding-bottom:9px; margin:0}
+.libro td.check label{padding-bottom:0}
+input,select{width:100%; font:inherit; font-size:14.5px; padding:8px 10px; border:1px solid var(--regla-2);
+  border-radius:6px; background:var(--superficie); color:var(--tinta)}
+input[type=checkbox]{width:auto}
+input.num{text-align:right}
+:focus-visible{outline:2px solid var(--verde); outline-offset:2px}
+button{font:inherit; cursor:pointer}
+.pri{background:var(--verde); color:var(--sobre-verde); border:1px solid var(--verde); border-radius:6px; padding:8px 16px; font-weight:600}
+.sec{background:var(--superficie); color:var(--tinta); border:1px solid var(--regla-2); border-radius:6px; padding:8px 14px}
+a.boton{display:inline-block; text-decoration:none}
+.link{background:none; border:0; color:var(--verde); padding:3px 6px; text-decoration:underline; text-underline-offset:2px; font-size:13.5px}
+.link.peligro{color:var(--rojo)}
+.oculto{position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden}
+.fila-botones{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px}
+.en-linea{display:flex; gap:6px; align-items:center}
+.en-linea input{min-width:140px}
+.acciones{display:flex; gap:4px; align-items:center; flex-wrap:wrap}
+.acciones form{display:inline}
+
+/* Tablas con aspecto de libro: columnas de importes separadas y doble subrayado en totales */
+.tabla-scroll{overflow-x:auto}
+.libro{width:100%; border-collapse:collapse; font-size:14px}
+.libro.angosta{max-width:760px}
+.libro th{text-align:left; font-weight:600; color:var(--tenue); font-size:12.5px; border-bottom:1px solid var(--regla-2); padding:8px 10px; white-space:nowrap}
+.libro td{padding:7px 10px; border-bottom:1px solid var(--regla); vertical-align:top}
+.libro .num{text-align:right; white-space:nowrap}
+.libro td.num, .libro th.num{border-left:1px solid var(--regla)}
+.libro tr.total td{font-weight:700; border-top:1px solid var(--tinta); border-bottom:3px double var(--tinta)}
+.libro tr.grupo td{font-weight:700; background:var(--papel)}
+.libro.lineas td{padding:5px 6px}
+.libro.lineas select{min-width:230px}
+.codigo{color:var(--tenue); white-space:nowrap}
+.detalle{font-size:12.5px; color:var(--tenue)}
+.pie{font-weight:400 !important; font-size:12.5px; color:var(--tenue)}
+.negativo{color:var(--rojo)}
+
+.asiento{background:var(--superficie); border:1px solid var(--regla); border-radius:8px; margin:12px 0; overflow:hidden}
+.asiento header{display:flex; flex-wrap:wrap; gap:6px 16px; align-items:baseline; padding:10px 14px; border-bottom:1px solid var(--regla-2)}
+.asiento .nro{font-weight:800}
+.asiento .concepto{flex:1 1 220px}
+.asiento.anulado .libro{opacity:.55; text-decoration:line-through}
+.estado{font-size:12px; padding:1px 9px; border-radius:10px; background:var(--papel); border:1px solid var(--regla-2)}
+.estado.confirmado{background:var(--verde-2); border-color:var(--verde-2)}
+.estado.anulado{background:var(--rojo-2); border-color:var(--rojo-2)}
+
+.totales{display:flex; gap:26px; flex-wrap:wrap; align-items:baseline; margin:12px 0 4px; padding:10px 0;
+  border-top:1px solid var(--tinta); border-bottom:3px double var(--tinta)}
+.totales span{color:var(--tenue); font-size:13px; margin-right:6px}
+.totales strong{font-size:17px}
+.balance{margin-left:auto; font-weight:700}
+.balance.ok{color:var(--verde)}
+.balance.mal{color:var(--rojo)}
+.control{font-weight:700}
+.control.ok{color:var(--verde)}
+.control.mal{color:var(--rojo)}
+
+.pestanas{display:flex; gap:4px; border-bottom:1px solid var(--regla-2); margin:18px 0 16px; overflow-x:auto}
+.pestanas a{padding:8px 12px; color:var(--tenue); text-decoration:none; border-bottom:3px solid transparent; white-space:nowrap}
+.pestanas a.activa{color:var(--tinta); border-bottom-color:var(--verde); font-weight:600}
+
+/* Resumen en franja, con el estilo de un encabezado de libro */
+.strip{display:grid; grid-template-columns:repeat(4,1fr); border-top:2px solid var(--tinta); border-bottom:1px solid var(--regla); margin:8px 0 18px}
+.strip > div{padding:14px 16px; border-left:1px solid var(--regla)}
+.strip > div:first-child{border-left:0; padding-left:0}
+.strip b{display:block; font-size:22px; font-weight:700; letter-spacing:-0.01em}
+.strip span{color:var(--tenue); font-size:13px}
+.observaciones{margin:6px 0 0; padding-left:18px; color:var(--rojo); font-size:13px}
+
+/* Carga rápida */
+.carga .importes{display:grid; grid-template-columns:repeat(5,minmax(110px,1fr)); gap:10px 12px; align-items:end}
+.carga .importes .destacado input{border-color:var(--verde); box-shadow:0 0 0 1px var(--verde)}
+.total-carga{font-size:20px; font-weight:800}
+a.sec.boton{color:var(--tinta)}
+.check-en-linea{display:flex; align-items:center; gap:6px; color:var(--tinta); margin:0; font-size:14px}
+.check-en-linea input{width:auto}
+table .en-fila select, table .en-fila input:not([type=checkbox]){min-width:120px}
+
+/* Login */
+.pagina-login{display:grid; place-items:center; min-height:100vh; padding:20px}
+.login{background:var(--superficie); border:1px solid var(--regla); border-top:3px solid var(--tinta); border-radius:8px;
+  padding:28px; width:100%; max-width:400px}
+.login .marca{padding:0; margin-bottom:20px}
+.login label{margin-top:12px}
+.login .pri{margin-top:18px; width:100%}
+.login h1{font-size:21px}
+
+@media (max-width: 860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .lateral{position:static; height:auto; border-right:0; border-bottom:1px solid var(--regla); padding:14px}
+  .lateral nav{display:flex; overflow-x:auto; gap:2px}
+  .lateral nav a{white-space:nowrap; border-left:0; border-bottom:3px solid transparent; border-radius:6px 6px 0 0}
+  .lateral nav a.activo{border-bottom-color:var(--verde)}
+  .lateral nav.admin{margin-top:8px; padding-top:8px}
+  .titulo-nav{align-self:center}
+  .sesion{padding-top:10px; display:flex; gap:8px; align-items:center}
+  main{padding:20px 16px 48px}
+  .grilla .ancho{grid-column:auto}
+  .strip{grid-template-columns:repeat(2,1fr)}
+  .carga .importes{grid-template-columns:repeat(2,1fr)}
+  .strip > div:nth-child(3){border-left:0; padding-left:0}
+}

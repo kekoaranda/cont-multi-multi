@@ -1,0 +1,48 @@
+<%
+  const e = ctx.empresa;
+  const enlace = (clave, ruta, texto) =>
+    `<a href="${ruta}"${seccion === clave ? ' class="activo" aria-current="page"' : ''}>${texto}</a>`;
+%>
+<aside class="lateral">
+    <div class="marca">Partida<small>Sistema contable multiempresa</small></div>
+
+    <% if (ctx.empresas.length) { %>
+    <form action="/cambiar-empresa" method="get" class="selector">
+        <label for="empresa-activa">Empresa activa</label>
+        <select id="empresa-activa" name="empresaId" onchange="this.form.submit()">
+            <% if (!e) { %><option value="" selected disabled>Elegí una empresa</option><% } %>
+            <% ctx.empresas.forEach((x) => { %>
+            <option value="<%= x.id %>"<%= e && String(x.id) === String(e.id) ? ' selected' : '' %>><%= x.razon_social %></option>
+            <% }) %>
+        </select>
+        <noscript><button type="submit" class="sec">Cambiar</button></noscript>
+        <% if (e) { %><div class="ruc">RUC <%= e.ruc %>-<%= e.dv %>, tu rol: <%= ctx.rol %></div><% } %>
+    </form>
+    <% } %>
+
+    <% if (e) { %>
+    <nav aria-label="Secciones">
+        <%- enlace('diario', `/empresas/${e.id}/diario`, 'Libro diario') %>
+        <%- enlace('comprobantes', `/empresas/${e.id}/comprobantes`, 'Comprobantes') %>
+        <%- enlace('plan', `/empresas/${e.id}/plan`, 'Plan de cuentas') %>
+        <%- enlace('plantillas', `/empresas/${e.id}/plantillas`, 'Plantillas') %>
+        <%- enlace('reportes', `/empresas/${e.id}/reportes`, 'Reportes') %>
+        <%- enlace('periodos', `/empresas/${e.id}/periodos`, 'Periodos') %>
+        <% if (ctx.puede('supervisor')) { %><%- enlace('accesos', `/empresas/${e.id}/accesos`, 'Accesos') %><% } %>
+    </nav>
+    <% } %>
+
+    <% if (ctx.usuario.esAdmin) { %>
+    <nav aria-label="Administración del estudio" class="admin">
+        <span class="titulo-nav">Estudio</span>
+        <%- enlace('admin-empresas', '/admin/empresas', 'Empresas clientes') %>
+        <%- enlace('admin-usuarios', '/admin/usuarios', 'Usuarios') %>
+    </nav>
+    <% } %>
+
+    <form action="/salir" method="post" class="sesion">
+        <%- include('_csrf') %>
+        <span><%= ctx.usuario.nombre %></span>
+        <button type="submit" class="link">Cerrar sesión</button>
+    </form>
+</aside>

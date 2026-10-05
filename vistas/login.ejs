@@ -1,0 +1,18 @@
+<%- include('_cabecera', { titulo: 'Iniciar sesión' }) %>
+<body class="pagina-login">
+<main class="login">
+    <div class="marca">Partida<small>Sistema contable multiempresa</small></div>
+    <% if (error) { %><div class="msg error" role="alert">Usuario o clave incorrectos, o el usuario está desactivado.</div><% } %>
+    <% if (salio) { %><div class="msg ok" role="status">Cerraste la sesión.</div><% } %>
+    <% if (desactivado) { %><div class="msg error" role="alert">Tu usuario fue desactivado. Consultá con el administrador del estudio.</div><% } %>
+    <form action="/login" method="post">
+        <%- include('_csrf') %>
+        <label for="usuario">Usuario</label>
+        <input id="usuario" name="usuario" value="<%= usuario %>" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+        <label for="clave">Clave</label>
+        <input id="clave" name="clave" type="password" autocomplete="current-password" required>
+        <button type="submit" class="pri">Iniciar sesión</button>
+    </form>
+</main>
+</body>
+</html>

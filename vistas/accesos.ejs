@@ -1,0 +1,65 @@
+<%- include('_cabecera', { titulo: 'Accesos' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'accesos' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <% const base = `/empresas/${ctx.empresa.id}/accesos`; %>
+    <h1>Accesos</h1>
+    <p class="sub">Quién trabaja en <%= ctx.empresa.razon_social %> y con qué rol. Los administradores del estudio tienen acceso a todas las empresas.</p>
+
+    <% if (ctx.usuario.esAdmin) { %>
+    <form action="<%= base %>" method="post" class="panel">
+        <%- include('_csrf') %>
+        <h3>Dar acceso o cambiar rol</h3>
+        <div class="grilla">
+            <div class="ancho">
+                <label for="usuarioId">Usuario</label>
+                <select id="usuarioId" name="usuarioId" required>
+                    <option value="">Elegí un usuario</option>
+                    <% usuarios.filter((u) => u.activo && !u.es_admin).forEach((u) => { %>
+                    <option value="<%= u.id %>"><%= u.nombre %> (<%= u.email %>)</option>
+                    <% }) %>
+                </select>
+            </div>
+            <div>
+                <label for="rol">Rol</label>
+                <select id="rol" name="rol">
+                    <% roles.forEach((r) => { %><option value="<%= r %>"<%= r === 'auxiliar' ? ' selected' : '' %>><%= capitalizar(r) %></option><% }) %>
+                </select>
+            </div>
+            <div><button type="submit" class="pri">Guardar acceso</button></div>
+        </div>
+        <p class="ayuda">Lectura: consulta. Auxiliar: carga borradores. Contador: confirma, anula y cierra meses. Supervisor: además reabre meses y ve los accesos.</p>
+    </form>
+    <% } %>
+
+    <% if (!accesos.length) { %>
+    <p class="vacio">Nadie tiene acceso asignado todavía, fuera de los administradores.</p>
+    <% } else { %>
+    <div class="tabla-scroll">
+        <table class="libro">
+            <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th></th></tr></thead>
+            <tbody>
+            <% accesos.forEach((a) => { %>
+            <tr>
+                <td><%= a.nombre %></td>
+                <td><%= a.email %></td>
+                <td><%= capitalizar(a.rol) %></td>
+                <td>
+                    <% if (ctx.usuario.esAdmin) { %>
+                    <form action="<%= base %>/<%= a.id %>/quitar" method="post" onsubmit="return confirm('¿Quitar el acceso a esta empresa?')">
+                        <%- include('_csrf') %><button type="submit" class="link peligro">Quitar acceso</button>
+                    </form>
+                    <% } %>
+                </td>
+            </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <% } %>
+</main>
+</div>
+</body>
+</html>

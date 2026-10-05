@@ -1,0 +1,60 @@
+<%- include('_cabecera', { titulo: 'Empresas clientes' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'admin-empresas' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <h1>Empresas clientes</h1>
+    <p class="sub">Cada empresa lleva su contabilidad por separado. Al crearla se copia el plan de cuentas base y se abre el ejercicio con sus 12 meses.</p>
+
+    <form action="/admin/empresas" method="post" class="panel">
+        <%- include('_csrf') %>
+        <h3>Nueva empresa</h3>
+        <div class="grilla">
+            <div><label for="ruc">RUC</label><input id="ruc" name="ruc" value="<%= form.ruc %>" placeholder="80012345-6" required autocomplete="off"></div>
+            <div class="ancho"><label for="razonSocial">Razón social</label><input id="razonSocial" name="razonSocial" value="<%= form.razonSocial %>" maxlength="200" required></div>
+            <div class="ancho"><label for="nombreFantasia">Nombre de fantasía (opcional)</label><input id="nombreFantasia" name="nombreFantasia" value="<%= form.nombreFantasia %>" maxlength="200"></div>
+            <div>
+                <label for="regimen">Régimen</label>
+                <select id="regimen" name="regimen">
+                    <% regimenes.forEach((r) => { %><option value="<%= r %>"<%= r === form.regimen ? ' selected' : '' %>><%= capitalizar(r) %></option><% }) %>
+                </select>
+            </div>
+            <div><label for="anioInicial">Primer ejercicio</label><input id="anioInicial" name="anioInicial" type="number" min="2000" max="2100" value="<%= form.anioInicial %>" required></div>
+            <div><button type="submit" class="pri">Agregar empresa</button></div>
+        </div>
+        <p class="ayuda">Podés escribir el RUC con o sin dígito verificador; si lo incluís, se controla que sea correcto.</p>
+    </form>
+
+    <% if (!empresas.length) { %>
+    <p class="vacio">Todavía no hay empresas. Agregá la primera con el formulario de arriba.</p>
+    <% } else { %>
+    <div class="tabla-scroll">
+        <table class="libro">
+            <thead><tr><th>Razón social</th><th>RUC</th><th>Régimen</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+            <% empresas.forEach((e) => { %>
+            <tr>
+                <td><% if (e.activa) { %><a href="/empresas/<%= e.id %>/diario"><%= e.razon_social %></a><% } else { %><%= e.razon_social %><% } %></td>
+                <td class="codigo"><%= e.ruc %>-<%= e.dv %></td>
+                <td><%= capitalizar(e.regimen) %></td>
+                <td><%= e.activa ? 'Activa' : 'Archivada' %></td>
+                <td class="acciones">
+                    <a class="link" href="/admin/empresas/<%= e.id %>/editar">Editar</a>
+                    <% if (e.activa) { %><a class="link" href="/empresas/<%= e.id %>/accesos">Accesos</a><% } %>
+                    <form action="/admin/empresas/<%= e.id %>/activa" method="post">
+                        <%- include('_csrf') %>
+                        <input type="hidden" name="valor" value="<%= !e.activa %>">
+                        <button type="submit" class="link"><%= e.activa ? 'Archivar' : 'Reactivar' %></button>
+                    </form>
+                </td>
+            </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <% } %>
+</main>
+</div>
+</body>
+</html>

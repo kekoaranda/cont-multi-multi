@@ -1,0 +1,56 @@
+<%- include('_cabecera', { titulo: 'Plan de cuentas' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'plan' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <% const base = `/empresas/${ctx.empresa.id}/plan`; %>
+    <h1>Plan de cuentas</h1>
+    <p class="sub">Propio de <%= ctx.empresa.razon_social %>. Las cuentas agrupadoras suman; solo las imputables reciben asientos.</p>
+
+    <% if (ctx.puede('contador')) { %>
+    <form action="<%= base %>" method="post" class="panel">
+        <%- include('_csrf') %>
+        <h3>Agregar cuenta</h3>
+        <div class="grilla">
+            <div><label for="codigo">Código</label><input id="codigo" name="codigo" value="<%= form.codigo %>" placeholder="5.2.09" required></div>
+            <div class="ancho"><label for="nombre">Nombre</label><input id="nombre" name="nombre" value="<%= form.nombre %>" maxlength="200" required></div>
+            <div class="check"><label><input type="checkbox" name="imputable"<%= form.imputable === 'on' ? ' checked' : '' %>> Imputable</label></div>
+            <div><button type="submit" class="pri">Agregar cuenta</button></div>
+        </div>
+        <p class="ayuda">El código cuelga de una cuenta agrupadora existente: 5.2.09 queda dentro de 5.2 o de 5. El tipo se hereda de la cuenta madre.</p>
+    </form>
+    <% } %>
+
+    <div class="tabla-scroll">
+        <table class="libro">
+            <thead><tr><th>Código</th><th>Cuenta</th><th>Tipo</th><th>Clase</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+            <% cuentas.forEach((c) => { %>
+            <tr<%= c.imputable ? '' : ' class=grupo' %>>
+                <td class="codigo" style="padding-left: <%= 10 + (c.codigo.split('.').length - 1) * 16 %>px"><%= c.codigo %></td>
+                <td><%= c.nombre %></td>
+                <td><%= capitalizar(c.tipo) %></td>
+                <td><%= c.imputable ? 'Imputable' : 'Agrupadora' %></td>
+                <td>
+                    <% if (!c.activa) { %><span class="estado anulado">Inactiva</span>
+                    <% } else if (usadas.has(c.codigo)) { %><span class="ayuda">Con movimientos</span><% } %>
+                </td>
+                <td>
+                    <% if (c.imputable && ctx.puede('contador')) { %>
+                    <form action="<%= base %>/<%= c.id %>/activa" method="post">
+                        <%- include('_csrf') %>
+                        <input type="hidden" name="valor" value="<%= !c.activa %>">
+                        <button type="submit" class="link"><%= c.activa ? 'Desactivar' : 'Activar' %></button>
+                    </form>
+                    <% } %>
+                </td>
+            </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<%- include('_cabecera', { titulo: 'Usuarios' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'admin-usuarios' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <h1>Usuarios del estudio</h1>
+    <p class="sub">Después de crear un usuario, asignale las empresas en las que trabaja desde la sección Accesos de cada empresa.</p>
+
+    <form action="/admin/usuarios" method="post" class="panel">
+        <%- include('_csrf') %>
+        <h3>Nuevo usuario</h3>
+        <div class="grilla">
+            <div class="ancho"><label for="nombre">Nombre completo</label><input id="nombre" name="nombre" value="<%= form.nombre %>" required></div>
+            <div><label for="usuario">Usuario para entrar</label><input id="usuario" name="usuario" value="<%= form.usuario %>" placeholder="nelson"
+                pattern="[a-z0-9._\-]{3,30}" autocapitalize="none" spellcheck="false" required autocomplete="off"></div>
+            <div class="ancho"><label for="email">Email</label><input id="email" name="email" type="email" value="<%= form.email %>" required autocomplete="off"></div>
+            <div><label for="clave">Clave inicial</label><input id="clave" name="clave" type="password" minlength="10" required autocomplete="new-password"></div>
+            <div class="check"><label><input type="checkbox" name="esAdmin"<%= form.esAdmin === 'on' ? ' checked' : '' %>> Administrador del estudio</label></div>
+            <div><button type="submit" class="pri">Crear usuario</button></div>
+        </div>
+        <p class="ayuda">El usuario va en minúsculas, sin espacios ni acentos. Un administrador ve todas las empresas y gestiona usuarios. Para el trabajo diario conviene asignar roles por empresa.</p>
+    </form>
+
+    <div class="tabla-scroll">
+        <table class="libro">
+            <thead><tr><th>Nombre</th><th>Usuario</th><th>Email</th><th>Tipo</th><th>Estado</th><th>Cambiar clave</th><th></th><th></th></tr></thead>
+            <tbody>
+            <% usuarios.forEach((u) => { %>
+            <tr>
+                <td><%= u.nombre %></td>
+                <td class="codigo"><%= u.usuario %></td>
+                <td><%= u.email %></td>
+                <td><%= u.es_admin ? 'Administrador' : 'Usuario' %></td>
+                <td><%= u.activo ? 'Activo' : 'Desactivado' %></td>
+                <td>
+                    <form action="/admin/usuarios/<%= u.id %>/clave" method="post" class="en-linea">
+                        <%- include('_csrf') %>
+                        <input type="password" name="clave" minlength="10" required autocomplete="new-password"
+                               aria-label="Nueva clave para <%= u.nombre %>" placeholder="Nueva clave">
+                        <button type="submit" class="link">Guardar</button>
+                    </form>
+                </td>
+                <td><a class="link" href="/admin/usuarios/<%= u.id %>/editar">Editar</a></td>
+                <td>
+                    <% if (String(u.id) !== String(ctx.usuario.id)) { %>
+                    <form action="/admin/usuarios/<%= u.id %>/activo" method="post">
+                        <%- include('_csrf') %>
+                        <input type="hidden" name="valor" value="<%= !u.activo %>">
+                        <button type="submit" class="link<%= u.activo ? ' peligro' : '' %>"><%= u.activo ? 'Desactivar' : 'Activar' %></button>
+                    </form>
+                    <% } %>
+                </td>
+            </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+</main>
+</div>
+</body>
+</html>

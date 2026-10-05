@@ -1,0 +1,32 @@
+<%- include('_cabecera', { titulo: 'Editar empresa' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'admin-empresas' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <h1>Editar empresa</h1>
+    <p class="sub"><%= empresa.razon_social %></p>
+
+    <form action="/admin/empresas/<%= empresa.id %>" method="post" class="panel">
+        <%- include('_csrf') %>
+        <div class="grilla">
+            <div><label for="ruc">RUC</label><input id="ruc" name="ruc" value="<%= form.ruc %>" required autocomplete="off"></div>
+            <div class="ancho"><label for="razonSocial">Razón social</label><input id="razonSocial" name="razonSocial" value="<%= form.razonSocial %>" maxlength="200" required></div>
+            <div class="ancho"><label for="nombreFantasia">Nombre de fantasía (opcional)</label><input id="nombreFantasia" name="nombreFantasia" value="<%= form.nombreFantasia %>" maxlength="200"></div>
+            <div>
+                <label for="regimen">Régimen</label>
+                <select id="regimen" name="regimen">
+                    <% regimenes.forEach((r) => { %><option value="<%= r %>"<%= r === form.regimen ? ' selected' : '' %>><%= capitalizar(r) %></option><% }) %>
+                </select>
+            </div>
+        </div>
+        <p class="ayuda">Si corregís el RUC, se vuelve a calcular el dígito verificador. El plan de cuentas y los asientos no cambian.</p>
+        <div class="fila-botones">
+            <button type="submit" class="pri">Guardar cambios</button>
+            <a class="link" href="/admin/empresas">Volver a la lista</a>
+        </div>
+    </form>
+</main>
+</div>
+</body>
+</html>

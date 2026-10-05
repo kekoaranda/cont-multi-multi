@@ -1,0 +1,7 @@
+<rDE xmlns="http://ekuatia.set.gov.py/sifen/xsd"><DE Id="05800451236001001000000312026092011234567890">
+<gTimb><iTiDE>5</iTiDE><dNumTim>16543210</dNumTim><dEst>001</dEst><dPunExp>001</dPunExp><dNumDoc>0000003</dNumDoc></gTimb>
+<gDatGralOpe><dFeEmiDE>2026-09-20T09:00:00</dFeEmiDE><gOpeCom><cMoneOpe>PYG</cMoneOpe></gOpeCom>
+<gEmis><dRucEm>80045123</dRucEm><dDVEmi>6</dDVEmi><dNomEmi>FERRETERIA SAN BLAS S.A.</dNomEmi></gEmis>
+<gDatRec><iNatRec>2</iNatRec><dNumIDRec>2345678</dNumIDRec><dNomRec>MARIA GONZALEZ</dNomRec></gDatRec></gDatGralOpe>
+<gTotSub><dTotGralOpe>110000</dTotGralOpe><dIVA5>0</dIVA5><dIVA10>10000</dIVA10><dBaseGrav5>0</dBaseGrav5><dBaseGrav10>100000</dBaseGrav10></gTotSub>
+</DE></rDE>

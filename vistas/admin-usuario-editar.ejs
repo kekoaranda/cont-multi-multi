@@ -1,0 +1,30 @@
+<%- include('_cabecera', { titulo: 'Editar usuario' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'admin-usuarios' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <h1>Editar usuario</h1>
+    <p class="sub"><%= editado.nombre %><%= editado.activo ? '' : ' (desactivado)' %></p>
+
+    <form action="/admin/usuarios/<%= editado.id %>" method="post" class="panel">
+        <%- include('_csrf') %>
+        <div class="grilla">
+            <div class="ancho"><label for="nombre">Nombre completo</label><input id="nombre" name="nombre" value="<%= form.nombre %>" required></div>
+            <div><label for="usuario">Usuario para entrar</label><input id="usuario" name="usuario" value="<%= form.usuario %>"
+                pattern="[a-z0-9._\-]{3,30}" autocapitalize="none" spellcheck="false" required autocomplete="off"></div>
+            <div class="ancho"><label for="email">Email</label><input id="email" name="email" type="email" value="<%= form.email %>" required autocomplete="off"></div>
+            <div><label for="clave">Clave nueva (opcional)</label><input id="clave" name="clave" type="password" minlength="10" autocomplete="new-password" placeholder="Dejar vacío"></div>
+            <div class="check"><label><input type="checkbox" name="esAdmin"<%= form.esAdmin === 'on' ? ' checked' : '' %><%= esUnoMismo ? ' disabled' : '' %>> Administrador del estudio</label>
+                <% if (esUnoMismo) { %><input type="hidden" name="esAdmin" value="on"><% } %></div>
+        </div>
+        <p class="ayuda">El usuario va en minúsculas, sin espacios ni acentos. Dejá la clave vacía para no cambiarla.<%= esUnoMismo ? ' No podés quitarte a vos mismo el rol de administrador.' : '' %></p>
+        <div class="fila-botones">
+            <button type="submit" class="pri">Guardar cambios</button>
+            <a class="link" href="/admin/usuarios">Volver a la lista</a>
+        </div>
+    </form>
+</main>
+</div>
+</body>
+</html>

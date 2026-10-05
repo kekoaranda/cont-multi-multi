@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<xDE><ns2:rDE xmlns:ns2="http://ekuatia.set.gov.py/sifen/xsd"><ns2:DE Id="01800111117001002000452112026091521234567890">
+<ns2:gTimb><ns2:iTiDE>1</ns2:iTiDE><ns2:dNumTim>15874236</ns2:dNumTim><ns2:dEst>001</ns2:dEst><ns2:dPunExp>002</ns2:dPunExp><ns2:dNumDoc>0004521</ns2:dNumDoc></ns2:gTimb>
+<ns2:gDatGralOpe><ns2:dFeEmiDE>2026-09-15T08:00:00</ns2:dFeEmiDE><ns2:gOpeCom><ns2:cMoneOpe>USD</ns2:cMoneOpe><ns2:dTiCam>7350.25</ns2:dTiCam></ns2:gOpeCom>
+<ns2:gEmis><ns2:dRucEm>80011111-7</ns2:dRucEm><ns2:dRazSocEm>DISTRIBUIDORA CENTRAL S.R.L.</ns2:dRazSocEm></ns2:gEmis>
+<ns2:gDatRec><ns2:iNatRec>1</ns2:iNatRec><ns2:dRucRec>80045123</ns2:dRucRec><ns2:dDVRec>6</ns2:dDVRec><ns2:dNomRec>FERRETERIA SAN BLAS S.A.</ns2:dNomRec></ns2:gDatRec></ns2:gDatGralOpe>
+<ns2:gDtipDE><ns2:gCamCond><ns2:iCondOpe>2</ns2:iCondOpe></ns2:gCamCond></ns2:gDtipDE>
+<ns2:gTotSub><ns2:dTotGralOpe>1100.00</ns2:dTotGralOpe><ns2:dIVA5>0</ns2:dIVA5><ns2:dIVA10>100.00</ns2:dIVA10><ns2:dBaseGrav5>0</ns2:dBaseGrav5><ns2:dBaseGrav10>1000.00</ns2:dBaseGrav10><ns2:dTotalGs>8085275</ns2:dTotalGs></ns2:gTotSub>
+</ns2:DE></ns2:rDE></xDE>

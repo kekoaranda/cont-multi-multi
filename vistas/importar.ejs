@@ -1,0 +1,104 @@
+<%- include('_cabecera', { titulo: 'Importar XML' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'comprobantes' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <% const base = `/empresas/${ctx.empresa.id}/comprobantes`; %>
+    <h1>Importar comprobantes electrónicos</h1>
+    <p class="sub">Subí los XML de facturación electrónica de <%= ctx.empresa.razon_social %>: se reconoce solo si cada uno es una venta o una compra, y se arma su asiento.</p>
+
+    <% if (!importacion) { %>
+    <form action="<%= base %>/importar" method="post" enctype="multipart/form-data" class="panel">
+        <%- include('_csrf') %>
+        <h3>Elegí los archivos</h3>
+        <div class="grilla">
+            <div class="ancho"><label for="archivos">Archivos XML o ZIP</label>
+                <input id="archivos" name="archivos" type="file" accept=".xml,.zip" multiple required></div>
+            <div><button type="submit" class="pri">Leer archivos</button></div>
+        </div>
+        <p class="ayuda">Podés elegir varios XML a la vez o un ZIP con muchos. Antes de registrar nada vas a ver una vista previa para revisar.</p>
+    </form>
+    <div class="panel">
+        <h3>Qué hace la importación</h3>
+        <p>Si la empresa es la que emitió el documento, se registra como <strong>venta</strong>; si es la receptora, como <strong>compra</strong>. Las notas de crédito invierten el asiento y las notas de remisión se ignoran porque no tienen efecto contable.</p>
+        <p>En cada compra elegís la cuenta de gasto o de activo. El sistema recuerda la elección para cada proveedor y la propone sola la próxima vez.</p>
+        <p class="ayuda">Un mismo documento (CDC) no se puede importar dos veces, ni registrar en un mes cerrado.</p>
+    </div>
+    <% } else { %>
+    <%
+      const listos = importacion.docs.filter((d) => !d.problemas.length).length;
+      const conProblemas = importacion.docs.length - listos;
+      const opcion = (c, elegida) => `<option value="${c.codigo}"${c.codigo === elegida ? ' selected' : ''}>${c.codigo}  ${escapar(c.nombre)}</option>`;
+      function escapar(t) { return String(t).replace(/[&<>"']/g, (x) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x])); }
+    %>
+    <div class="strip">
+        <div><b><%= importacion.docs.length %></b><span>Documentos leídos</span></div>
+        <div><b><%= listos %></b><span>Listos para registrar</span></div>
+        <div><b<%- conProblemas ? ' class="negativo"' : '' %>><%= conProblemas %></b><span>Con observaciones</span></div>
+        <div><b<%- importacion.errores.length ? ' class="negativo"' : '' %>><%= importacion.errores.length %></b><span>Archivos que no se pudieron leer</span></div>
+    </div>
+
+    <% if (importacion.errores.length) { %>
+    <div class="msg error" role="alert">Algunos archivos no se pudieron leer:
+        <ul><% importacion.errores.forEach((e) => { %><li><%= e.archivo %>: <%= e.mensaje %></li><% }) %></ul>
+    </div>
+    <% } %>
+
+    <form action="<%= base %>/importar/generar" method="post" id="form-generar">
+        <%- include('_csrf') %>
+        <div class="panel">
+            <div class="grilla">
+                <div class="ancho">
+                    <label for="cuentaContado">Cuenta para cobros y pagos al contado</label>
+                    <select id="cuentaContado" name="cuentaContado"><%- cuentasContado.map((c) => opcion(c, '1.1.01')).join('') %></select>
+                </div>
+                <% if (ctx.puede('contador')) { %>
+                <div class="check ancho"><label><input type="checkbox" name="confirmar"> Confirmar los asientos al registrarlos</label></div>
+                <% } %>
+            </div>
+            <p class="ayuda">Sin confirmar, los asientos quedan en borrador para revisarlos en el Libro diario. Las ventas y compras a crédito van a Deudores por ventas y a Proveedores.</p>
+        </div>
+
+        <div class="tabla-scroll">
+            <table class="libro">
+                <thead><tr>
+                    <th><span class="oculto">Incluir</span></th><th>Fecha</th><th>Documento</th><th>Cliente o proveedor</th>
+                    <th class="num">Total</th><th class="num">IVA</th><th>Cuenta de la compra</th>
+                </tr></thead>
+                <tbody>
+                <% importacion.docs.forEach((d, i) => { const ok = !d.problemas.length; %>
+                <tr>
+                    <td><input type="checkbox" name="docs[<%= i %>][incluir]" aria-label="Incluir <%= d.numero %>"<%= ok ? ' checked' : ' disabled' %>></td>
+                    <td><%= fecha(d.fecha) %></td>
+                    <td>
+                        <strong><%= d.operacion === 'venta' ? 'Venta' : d.operacion === 'compra' ? 'Compra' : '—' %></strong>,
+                        <%= (tipos[d.tipo] ?? 'documento').toLowerCase() %> <span class="codigo"><%= d.numero %></span>
+                        <div class="detalle"><%= d.condicion === 'credito' ? 'Crédito' : 'Contado' %><%= d.moneda !== 'PYG' ? `, en ${d.moneda} a ${d.tipoCambio}` : '' %></div>
+                        <% if (!ok) { %><ul class="observaciones"><% d.problemas.forEach((p) => { %><li><%= p %></li><% }) %></ul><% } %>
+                    </td>
+                    <td><% if (d.contraparte) { %><%= d.contraparte.nombre %><div class="detalle"><%= d.contraparte.ruc %></div><% } %></td>
+                    <td class="num"><%= d.importes ? gs(d.importes.total) : '' %></td>
+                    <td class="num"><%= d.importes ? gsSinCero(sumaIva(d.importes)) : '' %></td>
+                    <td>
+                        <% if (d.operacion === 'compra' && ok) { %>
+                        <select name="docs[<%= i %>][cuenta]" aria-label="Cuenta para <%= d.numero %>"><%- cuentasGasto.map((c) => opcion(c, d.cuenta)).join('') %></select>
+                        <% } %>
+                    </td>
+                </tr>
+                <% }) %>
+                </tbody>
+            </table>
+        </div>
+        <div class="fila-botones">
+            <button type="submit" class="pri"<%= listos ? '' : ' disabled' %>>Registrar comprobantes y asientos</button>
+        </div>
+    </form>
+    <form action="<%= base %>/importar/cancelar" method="post" class="fila-botones">
+        <%- include('_csrf') %><button type="submit" class="link">Descartar esta carga</button>
+    </form>
+    <% } %>
+</main>
+</div>
+</body>
+</html>

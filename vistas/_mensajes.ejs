@@ -1,0 +1,9 @@
+<% if (locals.ok) { %><div class="msg ok" role="status"><%= ok %></div><% } %>
+<% if (locals.error) { %>
+<div class="msg error" role="alert">
+    <%= error %>
+    <% if (locals.detalles && detalles.length) { %>
+    <ul><% detalles.forEach((d) => { %><li><%= d %></li><% }) %></ul>
+    <% } %>
+</div>
+<% } %>

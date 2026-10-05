@@ -1,0 +1,69 @@
+<%- include('_cabecera', { titulo: 'Periodos' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'periodos' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <% const base = `/empresas/${ctx.empresa.id}/periodos`; %>
+    <h1>Periodos</h1>
+    <p class="sub">Un mes cerrado no admite asientos nuevos ni cambios en los existentes. Cerrar es tarea del contador; reabrir, del supervisor.</p>
+
+    <div class="spread">
+        <% if (anios.length) { %>
+        <form method="get" class="filtros">
+            <div>
+                <label for="anio">Ejercicio</label>
+                <select id="anio" name="anio" onchange="this.form.submit()">
+                    <% anios.forEach((a) => { %><option value="<%= a %>"<%= a === anio ? ' selected' : '' %>><%= a %></option><% }) %>
+                </select>
+            </div>
+            <noscript><div><button type="submit" class="sec">Ver</button></div></noscript>
+        </form>
+        <% } %>
+        <% if (ctx.puede('contador')) { %>
+        <form action="<%= base %>/ejercicio" method="post" class="filtros">
+            <%- include('_csrf') %>
+            <div><label for="nuevo-anio">Nuevo ejercicio</label>
+                <input id="nuevo-anio" name="anio" type="number" min="2000" max="2100" value="<%= (anios[0] ?? anio - 1) + 1 %>" required></div>
+            <div><button type="submit" class="sec">Crear ejercicio</button></div>
+        </form>
+        <% } %>
+    </div>
+
+    <% if (!periodos.length) { %>
+    <p class="vacio">No hay un ejercicio <%= anio %> para esta empresa.</p>
+    <% } else { %>
+    <div class="tabla-scroll">
+        <table class="libro">
+            <thead><tr><th>Mes</th><th class="num">Asientos confirmados</th><th class="num">Borradores</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+            <% periodos.forEach((p) => { %>
+            <tr>
+                <td><%= mes(p.mes) %></td>
+                <td class="num"><%= p.asientos %></td>
+                <td class="num"><%= p.borradores %></td>
+                <td>
+                    <% if (p.cerrado) { %><span class="estado confirmado">Cerrado</span>
+                    <span class="ayuda">por <%= p.cerrado_por %> el <%= p.cerrado_en %></span><% } else { %>Abierto<% } %>
+                </td>
+                <td>
+                    <% if (!p.cerrado && ctx.puede('contador')) { %>
+                    <form action="<%= base %>/<%= p.mes %>/cerrar" method="post"
+                          onsubmit="return confirm('¿Cerrar el mes? No se podrán cargar ni modificar asientos con esa fecha.')">
+                        <%- include('_csrf') %><button type="submit" class="link">Cerrar mes</button></form>
+                    <% } else if (p.cerrado && ctx.puede('supervisor')) { %>
+                    <form action="<%= base %>/<%= p.mes %>/reabrir" method="post"
+                          onsubmit="return confirm('¿Reabrir el mes? Queda registrado en la auditoría.')">
+                        <%- include('_csrf') %><button type="submit" class="link peligro">Reabrir</button></form>
+                    <% } %>
+                </td>
+            </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <% } %>
+</main>
+</div>
+</body>
+</html>

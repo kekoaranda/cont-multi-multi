@@ -1,0 +1,77 @@
+<%- include('_cabecera', { titulo: 'Plantillas' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'plantillas' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <% const base = `/empresas/${ctx.empresa.id}/plantillas`; const editable = ctx.puede('contador');
+       const opcionesCuenta = (elegida, vacia) => (vacia ? `<option value="">Ventas según la tasa</option>` : '') +
+         cuentas.map((c) => `<option value="${c.codigo}"${c.codigo === elegida ? ' selected' : ''}>${c.codigo}  ${escapar(c.nombre)}</option>`).join('');
+       const opcionesColumna = (elegida) => Object.entries(columnas).map(([k, t]) => `<option value="${k}"${k === elegida ? ' selected' : ''}>${t}</option>`).join('');
+       function escapar(t) { return String(t).replace(/[&<>"']/g, (x) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x])); }
+    %>
+    <h1>Plantillas de asiento</h1>
+    <p class="sub">Cada plantilla indica a qué cuenta va una compra o una venta cargada a mano, en qué columna de IVA suele ir el importe y a qué impuestos se imputa.</p>
+
+    <% if (editable) { %>
+    <form action="<%= base %>" method="post" class="panel">
+        <%- include('_csrf') %>
+        <h3>Nueva plantilla</h3>
+        <div class="grilla">
+            <div class="ancho"><label for="nombre">Nombre</label><input id="nombre" name="nombre" value="<%= form.nombre %>" placeholder="Por ejemplo: Fletes" maxlength="100" required></div>
+            <div><label for="libro">Para</label>
+                <select id="libro" name="libro">
+                    <option value="COMPRA"<%= form.libro !== 'VENTA' ? ' selected' : '' %>>Compras</option>
+                    <option value="VENTA"<%= form.libro === 'VENTA' ? ' selected' : '' %>>Ventas</option>
+                </select></div>
+            <div class="ancho"><label for="cuenta">Cuenta</label><select id="cuenta" name="cuenta"><%- opcionesCuenta(form.cuenta, true) %></select></div>
+            <div><label for="columna">Importe por defecto en</label><select id="columna" name="columna"><%- opcionesColumna(form.columna) %></select></div>
+            <div class="check ancho">
+                <label><input type="checkbox" name="imputaIva"<%= form.imputaIva === 'on' ? ' checked' : '' %>> IVA</label>
+                <label><input type="checkbox" name="imputaIre"<%= form.imputaIre === 'on' ? ' checked' : '' %>> IRE</label>
+                <label><input type="checkbox" name="imputaIrp"<%= form.imputaIrp === 'on' ? ' checked' : '' %>> IRP</label>
+            </div>
+            <div><button type="submit" class="pri">Crear plantilla</button></div>
+        </div>
+        <p class="ayuda">En compras la cuenta es obligatoria. En ventas, si la dejás en "Ventas según la tasa", se usan las cuentas de ventas gravadas 10%, 5% y exentas.</p>
+    </form>
+    <% } %>
+
+    <% ['COMPRA', 'VENTA'].forEach((libro) => { const lista = plantillas.filter((p) => p.libro === libro); %>
+    <h2><%= libro === 'COMPRA' ? 'Compras' : 'Ventas' %></h2>
+    <div class="tabla-scroll">
+        <table class="libro">
+            <thead><tr><th>Nombre</th><th>Cuenta</th><th>Importe en</th><th>Imputa a</th><th>Activa</th><% if (editable) { %><th></th><% } %></tr></thead>
+            <tbody>
+            <% lista.forEach((p) => { const f = `p${p.id}`; %>
+            <tr class="en-fila">
+                <% if (editable) { %>
+                <td><form id="<%= f %>" action="<%= base %>/<%= p.id %>" method="post"><%- include('_csrf') %></form>
+                    <input form="<%= f %>" name="nombre" value="<%= p.nombre %>" aria-label="Nombre" maxlength="100" required></td>
+                <td><select form="<%= f %>" name="cuenta" aria-label="Cuenta de <%= p.nombre %>"><%- opcionesCuenta(p.cuenta ?? '', libro === 'VENTA') %></select></td>
+                <td><select form="<%= f %>" name="columna" aria-label="Importe por defecto de <%= p.nombre %>"><%- opcionesColumna(p.columna) %></select></td>
+                <td class="check">
+                    <label><input form="<%= f %>" type="checkbox" name="imputaIva"<%= p.imputa_iva ? ' checked' : '' %>> IVA</label>
+                    <label><input form="<%= f %>" type="checkbox" name="imputaIre"<%= p.imputa_ire ? ' checked' : '' %>> IRE</label>
+                    <label><input form="<%= f %>" type="checkbox" name="imputaIrp"<%= p.imputa_irp ? ' checked' : '' %>> IRP</label>
+                </td>
+                <td><input form="<%= f %>" type="checkbox" name="activa" aria-label="Activa"<%= p.activa ? ' checked' : '' %>></td>
+                <td><button form="<%= f %>" type="submit" class="link">Guardar</button></td>
+                <% } else { %>
+                <td><%= p.nombre %></td>
+                <td><%= p.cuenta ? `${p.cuenta} ${p.cuenta_nombre}` : 'Ventas según la tasa' %></td>
+                <td><%= columnas[p.columna] %></td>
+                <td><%= [p.imputa_iva && 'IVA', p.imputa_ire && 'IRE', p.imputa_irp && 'IRP'].filter(Boolean).join(', ') %></td>
+                <td><%= p.activa ? 'Sí' : 'No' %></td>
+                <% } %>
+            </tr>
+            <% }) %>
+            <% if (!lista.length) { %><tr><td colspan="6" class="ayuda">Sin plantillas.</td></tr><% } %>
+            </tbody>
+        </table>
+    </div>
+    <% }) %>
+</main>
+</div>
+</body>
+</html>

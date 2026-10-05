@@ -1,0 +1,27 @@
+{
+  "name": "contable",
+  "version": "0.1.0",
+  "description": "Sistema contable multiempresa para estudios contables",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=20.11" },
+  "scripts": {
+    "migrar": "node --env-file=.env src/migrar.js",
+    "dev": "node --watch --env-file=.env src/app.js",
+    "start": "node --env-file=.env src/app.js",
+    "test": "node --test",
+    "configurar": "node instalacion/configurar.js",
+    "respaldo": "node instalacion/respaldo.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-pg-simple": "^10.0.0",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "jszip": "^3.10.1",
+    "multer": "^2.0.2",
+    "pg": "^8.13.1",
+    "sax": "^1.4.1"
+  }
+}

@@ -1,0 +1,67 @@
+<%- include('_cabecera', { titulo: form.id ? 'Editar asiento' : 'Nuevo asiento' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'diario' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <h1><%= form.id ? `Editar asiento N.º ${form.numero}` : 'Nuevo asiento' %></h1>
+    <p class="sub">Los importes se escriben como en las facturas: 1.500.000 o 1.250,50. Las filas vacías se ignoran.</p>
+
+    <form action="/empresas/<%= ctx.empresa.id %>/diario/guardar" method="post" class="panel editor" id="form-asiento">
+        <%- include('_csrf') %>
+        <!-- Botón invisible: Enter guarda como borrador en vez de agregar una línea -->
+        <button type="submit" name="accion" value="borrador" class="oculto" tabindex="-1" aria-hidden="true"></button>
+        <input type="hidden" name="id" value="<%= form.id %>">
+        <input type="hidden" name="numero" value="<%= form.numero %>">
+
+        <div class="grilla">
+            <div><label for="fecha">Fecha</label><input id="fecha" type="date" name="fecha" value="<%= form.fecha %>" required></div>
+            <div class="ancho"><label for="concepto">Concepto</label>
+                <input id="concepto" name="concepto" value="<%= form.concepto %>" maxlength="500" required autocomplete="off"></div>
+        </div>
+
+        <div class="tabla-scroll">
+            <table class="libro lineas">
+                <thead><tr><th>Cuenta</th><th class="num">Debe</th><th class="num">Haber</th><th>Detalle (opcional)</th></tr></thead>
+                <tbody>
+                <% form.lineas.forEach((l, i) => { %>
+                <tr>
+                    <td>
+                        <select name="lineas[<%= i %>][cuenta]" aria-label="Cuenta, línea <%= i + 1 %>">
+                            <option value="">Elegí una cuenta</option>
+                            <% cuentas.forEach((c) => { %>
+                            <option value="<%= c.codigo %>"<%= c.codigo === l.cuenta ? ' selected' : '' %>><%= c.codigo %>  <%= c.nombre %></option>
+                            <% }) %>
+                        </select>
+                    </td>
+                    <td><input class="num importe debe" inputmode="decimal" autocomplete="off" name="lineas[<%= i %>][debe]"
+                               value="<%= l.debe %>" aria-label="Debe, línea <%= i + 1 %>"></td>
+                    <td><input class="num importe haber" inputmode="decimal" autocomplete="off" name="lineas[<%= i %>][haber]"
+                               value="<%= l.haber %>" aria-label="Haber, línea <%= i + 1 %>"></td>
+                    <td><input name="lineas[<%= i %>][detalle]" value="<%= l.detalle %>" maxlength="500" autocomplete="off"
+                               aria-label="Detalle, línea <%= i + 1 %>"></td>
+                </tr>
+                <% }) %>
+                </tbody>
+            </table>
+        </div>
+        <button type="submit" name="accion" value="agregarLinea" class="link">Agregar línea</button>
+
+        <!-- Se actualiza en vivo con asiento.js; el servidor vuelve a validar al guardar -->
+        <div class="totales" id="totales" hidden>
+            <div><span>Total debe</span><strong id="total-debe">0</strong></div>
+            <div><span>Total haber</span><strong id="total-haber">0</strong></div>
+            <div class="balance" id="estado-balance">Sin importes</div>
+        </div>
+
+        <div class="fila-botones">
+            <button type="submit" name="accion" value="borrador" class="sec">Guardar borrador</button>
+            <% if (ctx.puede('contador')) { %><button type="submit" name="accion" value="confirmar" class="pri">Guardar y confirmar</button><% } %>
+            <a class="link" href="/empresas/<%= ctx.empresa.id %>/diario">Cancelar</a>
+        </div>
+    </form>
+</main>
+</div>
+<script src="/asiento.js"></script>
+</body>
+</html>

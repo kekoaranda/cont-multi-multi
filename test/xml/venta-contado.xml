@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rDE xmlns="http://ekuatia.set.gov.py/sifen/xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<dVerFor>150</dVerFor>
+<DE Id="01800451236001001000012522026091011234567890">
+<gTimb><iTiDE>1</iTiDE><dDesTiDE>Factura electrónica</dDesTiDE><dNumTim>16543210</dNumTim><dEst>001</dEst><dPunExp>001</dPunExp><dNumDoc>0000125</dNumDoc></gTimb>
+<gDatGralOpe><dFeEmiDE>2026-09-10T10:30:00</dFeEmiDE>
+<gOpeCom><iTipTra>1</iTipTra><cMoneOpe>PYG</cMoneOpe></gOpeCom>
+<gEmis><dRucEm>80045123</dRucEm><dDVEmi>6</dDVEmi><dNomEmi>FERRETERIA SAN BLAS S.A.</dNomEmi></gEmis>
+<gDatRec><iNatRec>1</iNatRec><dRucRec>3456789</dRucRec><dDVRec>1</dDVRec><dNomRec>JUAN BENITEZ</dNomRec></gDatRec>
+</gDatGralOpe>
+<gDtipDE><gCamFE><iIndPres>1</iIndPres></gCamFE><gCamCond><iCondOpe>1</iCondOpe></gCamCond>
+<gCamItem><dDesProSer>Taladro</dDesProSer><gCamIVA><dTasaIVA>10</dTasaIVA><dBasGravIVA>2500000.0000</dBasGravIVA><dLiqIVAItem>250000.0000</dLiqIVAItem></gCamIVA></gCamItem>
+<gCamItem><dDesProSer>Arroz</dDesProSer><gCamIVA><dTasaIVA>5</dTasaIVA><dBasGravIVA>100000</dBasGravIVA><dLiqIVAItem>5000</dLiqIVAItem></gCamIVA></gCamItem>
+<gCamItem><dDesProSer>Libro</dDesProSer><gCamIVA><dTasaIVA>0</dTasaIVA></gCamIVA></gCamItem>
+</gDtipDE>
+<gTotSub><dSubExe>30000</dSubExe><dSubExo>0</dSubExo><dSub5>105000</dSub5><dSub10>2750000</dSub10><dTotOpe>2885000</dTotOpe><dTotGralOpe>2885000</dTotGralOpe>
+<dIVA5>5000</dIVA5><dIVA10>250000</dIVA10><dTotIVA>255000</dTotIVA><dBaseGrav5>100000</dBaseGrav5><dBaseGrav10>2500000</dBaseGrav10><dTBasGraIVA>2600000</dTBasGraIVA></gTotSub>
+</DE>
+</rDE>

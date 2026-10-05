@@ -1,0 +1,11 @@
+<%- include('_cabecera', { titulo: 'No se pudo mostrar la página' }) %>
+<body class="pagina-login">
+<main class="login">
+    <div class="marca">Partida</div>
+    <h1>No se pudo mostrar la página</h1>
+    <p><%= mensaje %></p>
+    <% if (detalles && detalles.length) { %><ul><% detalles.forEach((d) => { %><li><%= d %></li><% }) %></ul><% } %>
+    <p><a href="/">Volver al inicio</a></p>
+</main>
+</body>
+</html>

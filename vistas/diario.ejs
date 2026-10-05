@@ -1,0 +1,89 @@
+<%- include('_cabecera', { titulo: 'Libro diario' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'diario' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <% const base = `/empresas/${ctx.empresa.id}/diario`; %>
+
+    <div class="spread">
+        <div>
+            <h1>Libro diario</h1>
+            <p class="sub"><%= ctx.empresa.razon_social %></p>
+        </div>
+        <% if (ctx.puede('auxiliar')) { %><a class="pri boton" href="<%= base %>/nuevo">Nuevo asiento</a><% } %>
+    </div>
+
+    <form method="get" class="filtros">
+        <div><label for="desde">Desde</label><input id="desde" type="date" name="desde" value="<%= desde %>"></div>
+        <div><label for="hasta">Hasta</label><input id="hasta" type="date" name="hasta" value="<%= hasta %>"></div>
+        <div>
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="">Todos</option>
+                <% [['borrador', 'Borradores'], ['confirmado', 'Confirmados'], ['anulado', 'Anulados']].forEach(([v, t]) => { %>
+                <option value="<%= v %>"<%= estado === v ? ' selected' : '' %>><%= t %></option>
+                <% }) %>
+            </select>
+        </div>
+        <div class="ancho"><label for="buscar">Buscar en el concepto</label><input id="buscar" name="buscar" value="<%= buscar %>"></div>
+        <div><button type="submit" class="sec">Filtrar</button></div>
+    </form>
+
+    <% if (!asientos.length) { %>
+    <p class="vacio">No hay asientos con esos filtros entre <%= fecha(desde) %> y <%= fecha(hasta) %>.</p>
+    <% } %>
+
+    <% asientos.forEach((a) => { %>
+    <article class="asiento<%= a.estado === 'anulado' ? ' anulado' : '' %>">
+        <header>
+            <span class="nro">N.º <%= a.numero %></span>
+            <span><%= fecha(a.fecha) %></span>
+            <span class="concepto"><%= a.concepto %></span>
+            <span class="estado <%= a.estado %>"><%= capitalizar(a.estado) %></span>
+            <span class="acciones">
+                <% if (a.estado === 'borrador') { %>
+                    <% if (ctx.puede('auxiliar')) { %><a class="link" href="<%= base %>/<%= a.id %>/editar">Editar</a><% } %>
+                    <% if (ctx.puede('contador')) { %>
+                    <form action="<%= base %>/<%= a.id %>/confirmar" method="post"><%- include('_csrf') %>
+                        <button type="submit" class="link">Confirmar</button></form>
+                    <% } %>
+                    <% if (ctx.puede('auxiliar') && a.origen === 'manual') { %>
+                    <form action="<%= base %>/<%= a.id %>/eliminar" method="post" onsubmit="return confirm('¿Eliminar este borrador?')"><%- include('_csrf') %>
+                        <button type="submit" class="link peligro">Eliminar</button></form>
+                    <% } %>
+                <% } else if (a.estado === 'confirmado' && a.origen === 'manual' && ctx.puede('contador')) { %>
+                    <form action="<%= base %>/<%= a.id %>/anular" method="post"
+                          onsubmit="return confirm('¿Anular este asiento? Queda en el diario como constancia y no se puede revertir.')"><%- include('_csrf') %>
+                        <button type="submit" class="link peligro">Anular</button></form>
+                <% } %>
+                <% if (a.origen !== 'manual') { %><a class="link" href="/empresas/<%= ctx.empresa.id %>/comprobantes?asiento=<%= a.id %>">Ver comprobante</a><% } %>
+            </span>
+        </header>
+        <div class="tabla-scroll">
+            <table class="libro">
+                <thead><tr><th>Código</th><th>Cuenta</th><th class="num">Debe</th><th class="num">Haber</th></tr></thead>
+                <tbody>
+                <% a.lineas.forEach((l) => { %>
+                    <tr>
+                        <td class="codigo"><%= l.cuenta %></td>
+                        <td><%= l.nombre %><% if (l.detalle) { %><div class="detalle"><%= l.detalle %></div><% } %></td>
+                        <td class="num"><%= gsSinCero(l.debe) %></td>
+                        <td class="num"><%= gsSinCero(l.haber) %></td>
+                    </tr>
+                <% }) %>
+                    <tr class="total">
+                        <td></td>
+                        <td class="pie"><%= a.creado_por ? `Cargado por ${a.creado_por} el ${a.creado_en}` : '' %></td>
+                        <td class="num"><%= gs(a.totalDebe) %></td>
+                        <td class="num"><%= gs(a.totalHaber) %></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </article>
+    <% }) %>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<%- include('_cabecera', { titulo: 'Comprobantes' }) %>
+<body>
+<div class="app">
+<%- include('_lateral', { seccion: 'comprobantes' }) %>
+<main>
+    <%- include('_mensajes') %>
+    <% const base = `/empresas/${ctx.empresa.id}/comprobantes`; %>
+    <div class="spread">
+        <div>
+            <h1>Comprobantes</h1>
+            <p class="sub">Libros de compras y ventas de <%= ctx.empresa.razon_social %>. Cada comprobante tiene su asiento en el diario.</p>
+        </div>
+        <% if (ctx.puede('auxiliar')) { %>
+        <div class="fila-botones">
+            <a class="sec boton" href="/empresas/<%= ctx.empresa.id %>/carga?libro=COMPRA">Cargar compra en papel</a>
+            <a class="sec boton" href="/empresas/<%= ctx.empresa.id %>/carga?libro=VENTA">Cargar venta en papel</a>
+            <a class="pri boton" href="<%= base %>/importar">Importar XML de SIFEN</a>
+        </div>
+        <% } %>
+    </div>
+
+    <% if (asiento) { %>
+    <p class="ayuda">Mostrando el comprobante del asiento seleccionado. <a href="<%= base %>">Ver todos</a></p>
+    <% } else { %>
+    <form method="get" class="filtros">
+        <div><label for="desde">Desde</label><input id="desde" type="date" name="desde" value="<%= desde %>"></div>
+        <div><label for="hasta">Hasta</label><input id="hasta" type="date" name="hasta" value="<%= hasta %>"></div>
+        <div>
+            <label for="libro">Libro</label>
+            <select id="libro" name="libro">
+                <option value="">Compras y ventas</option>
+                <option value="VENTA"<%= libro === 'VENTA' ? ' selected' : '' %>>Ventas</option>
+                <option value="COMPRA"<%= libro === 'COMPRA' ? ' selected' : '' %>>Compras</option>
+            </select>
+        </div>
+        <div><button type="submit" class="sec">Filtrar</button></div>
+    </form>
+
+    <div class="strip">
+        <div><b><%= gs(totales.ventas) %></b><span>Ventas (IVA incluido)</span></div>
+        <div><b><%= gs(totales.compras) %></b><span>Compras (IVA incluido)</span></div>
+        <div><b><%= gs(totales.ivaVentas) %> / <%= gs(totales.ivaCompras) %></b><span>IVA débito / crédito</span></div>
+        <div><b<%- totales.saldoIva.startsWith('-') ? ' class="negativo"' : '' %>><%= gs(totales.saldoIva.replace('-', '')) %></b>
+            <span><%= totales.saldoIva.startsWith('-') ? 'Saldo de IVA a favor' : 'IVA a pagar' %> (orientativo)</span></div>
+    </div>
+    <% } %>
+
+    <% if (!comprobantes.length) { %>
+    <p class="vacio">No hay comprobantes en este periodo. Importá los XML de facturación electrónica o cargá las facturas en papel con los botones de arriba.</p>
+    <% } else { %>
+    <div class="tabla-scroll">
+        <table class="libro">
+            <thead><tr>
+                <th>Fecha</th><th>Libro</th><th>Comprobante</th><th>Cliente o proveedor</th>
+                <th class="num">Total</th><th class="num">IVA</th><th>Asiento</th><th></th>
+            </tr></thead>
+            <tbody>
+            <% comprobantes.forEach((co) => { %>
+            <tr>
+                <td><%= fecha(co.fecha) %></td>
+                <td><%= co.libro === 'VENTA' ? 'Venta' : 'Compra' %></td>
+                <td>
+                    <%= tipos[co.tipo] ?? 'Comprobante' %> <span class="codigo"><%= co.numero %></span>
+                    <div class="detalle">Timbrado <%= co.timbrado %><%= co.condicion === 'CREDITO' ? ', crédito' : ', contado' %><%= co.moneda !== 'PYG' ? `, en ${co.moneda}` : '' %></div>
+                </td>
+                <td><%= co.razon_social %><div class="detalle"><%= co.ruc %><%= co.dv !== null ? '-' + co.dv : '' %></div></td>
+                <td class="num<%= co.tipo === 5 ? ' negativo' : '' %>"><%= co.tipo === 5 ? '-' : '' %><%= gs(co.total) %></td>
+                <td class="num<%= co.tipo === 5 ? ' negativo' : '' %>"><%= co.tipo === 5 ? '-' : '' %><%= gsSinCero(sumaIva(co)) %></td>
+                <td>
+                    <% if (co.asiento_id) { %>
+                    <a href="/empresas/<%= ctx.empresa.id %>/diario?desde=<%= co.fecha %>&hasta=<%= co.fecha %>">N.º <%= co.asiento_numero %></a>
+                    <span class="estado <%= co.asiento_estado %>"><%= capitalizar(co.asiento_estado) %></span>
+                    <% } %>
+                </td>
+                <td class="acciones">
+                    <% if (co.asiento_estado === 'borrador' && ctx.puede('auxiliar')) { %>
+                    <form action="<%= base %>/<%= co.id %>/eliminar" method="post" onsubmit="return confirm('¿Eliminar el comprobante y su asiento?')">
+                        <%- include('_csrf') %><button type="submit" class="link peligro">Eliminar</button></form>
+                    <% } else if (co.asiento_estado === 'confirmado' && ctx.puede('contador')) { %>
+                    <form action="<%= base %>/<%= co.id %>/anular" method="post" onsubmit="return confirm('¿Anular el comprobante? Su asiento queda anulado en el diario.')">
+                        <%- include('_csrf') %><button type="submit" class="link peligro">Anular</button></form>
+                    <% } %>
+                </td>
+            </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <% } %>
+</main>
+</div>
+</body>
+</html>
