@@ -28,7 +28,8 @@ test('suma sin errores de coma flotante', () => {
 
 test('partida doble', () => {
   validarLineas([{ cuenta: '5.2.06', debe: '50000.00', haber: '0.00' }, { cuenta: '1.1.02', debe: '0.00', haber: '50000.00' }]);
-  assert.throws(() => validarLineas([{ cuenta: '1', debe: '100.00', haber: '0.00' }, { cuenta: '2', debe: '0.00', haber: '99.99' }]), /no balancea/);
+  assert.throws(() => validarLineas([{ cuenta: '1', debe: '100.00', haber: '0.00' }, { cuenta: '2', debe: '0.00', haber: '99.99' }]), /no balancea: debe 100, haber 99,99\./);
+  assert.throws(() => validarLineas([{ cuenta: '1', debe: '1500000.00', haber: '0.00' }, { cuenta: '2', debe: '0.00', haber: '1250.50' }]), /debe 1\.500\.000, haber 1\.250,50\./);
   assert.throws(() => validarLineas([{ cuenta: '1', debe: '100.00', haber: '100.00' }, { cuenta: '2', debe: '0.00', haber: '0.00' }]), (e) => e.detalles[0].startsWith('Línea 1'));
   assert.throws(() => validarLineas([{ cuenta: '1', debe: '1.00', haber: '0.00' }]), /al menos dos/);
 });

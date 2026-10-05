@@ -6,7 +6,7 @@
     <%- include('_mensajes') %>
     <% const base = `/empresas/${ctx.empresa.id}/plan`; %>
     <h1>Plan de cuentas</h1>
-    <p class="sub">Propio de <%= ctx.empresa.razon_social %>. Las cuentas agrupadoras suman; solo las imputables reciben asientos.</p>
+    <p class="sub">Propio de <%= ctx.empresa.razon_social %>: las cuentas agrupadoras suman; solo las imputables reciben asientos.</p>
 
     <% if (ctx.puede('contador')) { %>
     <form action="<%= base %>" method="post" class="panel">

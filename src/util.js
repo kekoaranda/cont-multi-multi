@@ -81,7 +81,7 @@ export function validarLineas(lineas) {
   });
   if (errores.length) throw new HttpError(422, 'Hay líneas inválidas.', errores);
   if (debe !== haber) {
-    throw new HttpError(422, `El asiento no balancea: debe ${deCentavos(debe)}, haber ${deCentavos(haber)}.`);
+    throw new HttpError(422, `El asiento no balancea: debe ${gs(deCentavos(debe))}, haber ${gs(deCentavos(haber))}.`);
   }
 }
 
